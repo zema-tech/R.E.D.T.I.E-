@@ -23,9 +23,9 @@ export const botConfig = {
     // 5 = Competing
     activities: [
       {
-        name: "Custom Status", // required by Discord API, not shown in the client
-        state: "stalking",     // this is what people actually see
-        type: 4,               // Custom
+        name: "Community Safety", // required by Discord API, not shown in the client
+        state: "Keeping your community safe", // this is what people actually see
+        type: 3, // Watching
       },
     ],
   },
@@ -126,7 +126,6 @@ export const botConfig = {
         closed: "#ED4245",
         pending: "#99AAB5",
       },
-      economy: "#F1C40F",
       birthday: "#E91E63",
       moderation: "#9B59B6",
 

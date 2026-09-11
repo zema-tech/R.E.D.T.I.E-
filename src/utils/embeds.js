@@ -127,7 +127,7 @@ export function createEmbed({
   footer = null,
   thumbnail = null,
   image = null,
-  timestamp = false,
+  timestamp = true,
   url = null
 } = {}) {
   const embed = new EmbedBuilder();

@@ -106,7 +106,7 @@ export async function createInitialHelpMenu(client) {
     });
 
     embed.setFooter({ 
-        text: "Made with ❤️" 
+        text: "TitanBot • Professional Community Management" 
     });
     embed.setTimestamp();
 
