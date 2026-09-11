@@ -3,6 +3,7 @@ import { createEmbed } from '../../../utils/embeds.js';
 import { logger } from '../../../utils/logger.js';
 import { handleInteractionError, replyUserError, ErrorTypes } from '../../../utils/errorHandler.js';
 import { InteractionHelper } from '../../../utils/interactionHelper.js';
+import { sanitizeInput, sanitizeMarkdown } from '../../../utils/validation.js';
 
 export default {
     async execute(interaction) {
@@ -12,7 +13,8 @@ export default {
                 return;
             }
 
-            const word = interaction.options.getString('word');
+            // VibeSec: bound user input before reflecting it or sending it out.
+            const word = sanitizeInput(interaction.options.getString('word'), 200);
 
             if (word.length < 2) {
                 logger.warn('Define command - word too short', {
@@ -29,7 +31,7 @@ export default {
             );
 
             if (!response.data || response.data.length === 0) {
-                return await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: `No definitions found for "${word}".` });
+                return await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: `No definitions found for "${sanitizeMarkdown(word)}".` });
             }
 
             const data = response.data[0];
@@ -82,7 +84,7 @@ export default {
             });
 
             if (error.response?.status === 404) {
-                await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: `No definitions found for "${interaction.options.getString('word')}".` });
+                await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: `No definitions found for "${sanitizeMarkdown(sanitizeInput(interaction.options.getString('word'), 200))}".` });
             } else {
                 await handleInteractionError(interaction, error, {
                     commandName: 'define',

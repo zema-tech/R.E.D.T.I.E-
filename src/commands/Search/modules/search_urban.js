@@ -3,11 +3,14 @@ import { createEmbed } from '../../../utils/embeds.js';
 import { logger } from '../../../utils/logger.js';
 import { handleInteractionError, replyUserError, ErrorTypes } from '../../../utils/errorHandler.js';
 import { InteractionHelper } from '../../../utils/interactionHelper.js';
+import { sanitizeInput, sanitizeMarkdown } from '../../../utils/validation.js';
 
 export default {
     async execute(interaction) {
         try {
-            const term = interaction.options.getString('term');
+            // VibeSec: bound + neutralize user input before reflecting it or
+            // sending it to the third-party API.
+            const term = sanitizeInput(interaction.options.getString('term'), 200);
 
             if (term.length < 2) {
                 logger.warn('Urban command - term too short', {
@@ -43,7 +46,7 @@ export default {
             clearDeferTimer();
 
             if (!response.data?.list?.length) {
-                return await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: `No definitions found for "${term}" on Urban Dictionary.` });
+                return await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: `No definitions found for "${sanitizeMarkdown(term)}" on Urban Dictionary.` });
             }
 
             const definition = response.data.list[0];
@@ -62,9 +65,12 @@ export default {
                 title: definition.word,
                 description: formattedDefinition,
                 color: 'info'
-            })
-            .setURL(definition.permalink)
-            .addFields(
+            });
+            // VibeSec: only link out to http(s) permalinks from the API.
+            if (typeof definition.permalink === 'string' && /^https?:\/\//.test(definition.permalink)) {
+                embed.setURL(definition.permalink);
+            }
+            embed.addFields(
                 {
                     name: 'Example',
                     value: formattedExample,
@@ -107,7 +113,7 @@ export default {
             });
 
             if (error.response?.status === 404 || !error.response) {
-                await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: `No definitions found for "${interaction.options.getString('term')}" on Urban Dictionary.` });
+                await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: `No definitions found for "${sanitizeMarkdown(sanitizeInput(interaction.options.getString('term'), 200))}" on Urban Dictionary.` });
             } else if (error.response?.status === 429) {
                 await replyUserError(interaction, { type: ErrorTypes.RATE_LIMIT, message: 'Too many requests to Urban Dictionary. Please try again in a few minutes.' });
             } else {

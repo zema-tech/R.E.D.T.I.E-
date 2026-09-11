@@ -89,9 +89,14 @@ export function validateUrl(value, fieldName = 'URL') {
     logger.warn(`[VALIDATION] ${fieldName} must be a non-empty string`);
     return null;
   }
-  
+
   try {
-    new URL(value);
+    const parsed = new URL(value);
+    // VibeSec: restrict to http(s) — blocks javascript:, data:, file:, etc.
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      logger.warn(`[VALIDATION] ${fieldName} uses a disallowed URL scheme`);
+      return null;
+    }
     return value;
   } catch (error) {
     logger.warn(`[VALIDATION] ${fieldName} is not a valid URL`);

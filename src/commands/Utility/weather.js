@@ -3,6 +3,7 @@ import { createEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/
 import { logger } from '../../utils/logger.js';
 import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { sanitizeInput, sanitizeMarkdown } from '../../utils/validation.js';
 const GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search";
 const WEATHER_URL = "https://api.open-meteo.com/v1/forecast";
 
@@ -28,7 +29,9 @@ export default {
             return;
         }
 
-        const city = interaction.options.getString("city");
+        // VibeSec: bound + neutralize user input before reflecting it in
+        // messages (markdown/mention abuse) or sending it to the API.
+        const city = sanitizeInput(interaction.options.getString("city"), 200);
 
         const geoResponse = await fetch(
             `${GEOCODING_URL}?name=${encodeURIComponent(city)}`,
@@ -41,7 +44,7 @@ export default {
                 city: city,
                 guildId: interaction.guildId
             });
-            await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: `Could not find a location for **${city}**. Please check the spelling.` });
+            await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: `Could not find a location for **${sanitizeMarkdown(city)}**. Please check the spelling.` });
             return;
         }
 

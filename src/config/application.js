@@ -60,7 +60,9 @@ const appConfig = {
   api: {
     port: process.env.PORT || 3000,
     cors: {
-      origin: process.env.CORS_ORIGIN?.split(",") || "*",
+      // VibeSec: fail closed — empty allowlist unless CORS_ORIGIN is set
+      // to a comma-separated list of trusted origins. Never default to '*'.
+      origin: process.env.CORS_ORIGIN?.split(",").map((o) => o.trim()).filter(Boolean) || [],
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],
     },

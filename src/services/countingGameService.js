@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger.js';
+import { evaluateMathExpression } from '../utils/safeMathParser.js';
 
 const COUNTING_GAME_KEY_PREFIX = 'countingGame:';
 
@@ -115,25 +116,30 @@ const COUNTING_SYSTEMS = {
     description: 'Use a math expression that equals the next number, like 4*4=16',
     toString: (n) => `${n}`,
     parse: (value) => {
+      // VibeSec: no Function()/eval — evaluate with the shunting-yard parser.
+      // Length cap first to bound CPU (ReDoS/exponent DoS like 9**9**9).
       const expression = value.replace(/\s+/g, '');
-      if (expression.length === 0) return null;
+      if (expression.length === 0 || expression.length > 100) return null;
       const sanitized = expression.replace(/\^/g, '**');
       if (!/^[0-9+\-*/().=**]+$/.test(sanitized)) return null;
       const parts = sanitized.split('=');
+      if (parts.length > 2) return null;
       try {
         const evaluate = (expr) => {
-          if (!expr || /[^0-9+\-*/().]/.test(expr)) return null;
-          // eslint-disable-next-line no-new-func
-          return Function(`"use strict"; return (${expr});`)();
+          // Keep the counting language narrow: digits and operators only.
+          if (!expr || expr.length > 100 || /[^0-9+\-*/().]/.test(expr)) return null;
+          const result = evaluateMathExpression(expr.replace(/\*\*/g, '^'));
+          return Number.isFinite(result) ? result : null;
         };
 
         if (parts.length === 1) {
-          return Number(evaluate(parts[0]));
+          const single = evaluate(parts[0]);
+          return single === null ? null : Number(single);
         }
         if (parts.length === 2) {
           const left = evaluate(parts[0]);
           const right = evaluate(parts[1]);
-          if (left === right) {
+          if (left !== null && left === right) {
             return Number(left);
           }
           return null;

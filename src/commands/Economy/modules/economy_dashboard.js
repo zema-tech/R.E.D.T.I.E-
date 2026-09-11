@@ -110,24 +110,64 @@ async function refreshDashboard(rootInteraction, guild, client) {
     }).catch(() => {});
 }
 
+// VibeSec: strict validation for values interpolated into bot.js.
+// A double-quoted JS string literal breaks on `"`, `\`, newlines, and the
+// sequence `${` — these are rejected outright (fail closed) before any file
+// rewrite. A lone `$` (e.g. the default "$" symbol) is harmless and allowed.
+function containsJsStringBreakout(value) {
+    return /["\\`\x00-\x1F\x7F]/.test(value) || value.includes('${');
+}
+
+function escapeJsDoubleQuoted(value) {
+    return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+export function isValidCurrencySymbol(value) {
+    return (
+        typeof value === 'string' &&
+        value.length >= 1 &&
+        value.length <= 3 &&
+        !containsJsStringBreakout(value)
+    );
+}
+
+export function isValidCurrencyName(value) {
+    return (
+        typeof value === 'string' &&
+        value.length >= 1 &&
+        value.length <= 20 &&
+        !containsJsStringBreakout(value)
+    );
+}
+
 async function updateConfigFile(currencySymbol, currencyName) {
+    // Fail closed: never rewrite bot.js with values that could break out
+    // of the double-quoted string literal (second-order code injection).
+    if (!isValidCurrencySymbol(currencySymbol) || !isValidCurrencyName(currencyName)) {
+        logger.warn('Refused to update config file: invalid currency value rejected by allowlist');
+        return false;
+    }
     try {
         const configPath = path.join(__dirname, '../../../config/bot.js');
         let configContent = await fs.readFile(configPath, 'utf-8');
 
+        const safeSymbol = escapeJsDoubleQuoted(currencySymbol);
+        const safeName = escapeJsDoubleQuoted(currencyName);
+        const safeNamePlural = escapeJsDoubleQuoted(`${currencyName}s`);
+
         configContent = configContent.replace(
             /symbol:\s*"[^"]*"/,
-            `symbol: "${currencySymbol}"`
+            `symbol: "${safeSymbol}"`
         );
 
         configContent = configContent.replace(
             /name:\s*"[^"]*",\s*\/\/\s*Currency display name/,
-            `name: "${currencyName}", // Currency display name`
+            `name: "${safeName}", // Currency display name`,
         );
 
         configContent = configContent.replace(
             /namePlural:\s*"[^"]*",\s*\/\/\s*Plural display name/,
-            `namePlural: "${currencyName}s", // Plural display name`
+            `namePlural: "${safeNamePlural}", // Plural display name`,
         );
         
         await fs.writeFile(configPath, configContent, 'utf-8');
@@ -448,8 +488,8 @@ async function handleChangeCurrency(selectInteraction, rootInteraction, guild) {
 
     const newSymbol = submitted.fields.getTextInputValue('currency_symbol').trim();
 
-    if (newSymbol.length === 0 || newSymbol.length > 3) {
-        await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: 'Currency symbol must be 1-3 characters long.' });
+    if (!isValidCurrencySymbol(newSymbol)) {
+        await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: 'Currency symbol must be 1-3 characters long and cannot contain `"`, `\\`, backticks, `${`, or control characters.' });
         return;
     }
 
@@ -502,8 +542,8 @@ async function handleChangeName(selectInteraction, rootInteraction, guild) {
 
     const newName = submitted.fields.getTextInputValue('currency_name').trim();
 
-    if (newName.length === 0 || newName.length > 20) {
-        await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: 'Currency name must be 1-20 characters long.' });
+    if (!isValidCurrencyName(newName)) {
+        await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: 'Currency name must be 1-20 characters long and cannot contain `"`, `\\`, backticks, `${`, or control characters.' });
         return;
     }
 

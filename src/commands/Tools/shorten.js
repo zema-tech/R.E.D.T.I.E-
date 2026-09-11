@@ -40,12 +40,22 @@ export default {
         const url = interaction.options.getString("url");
         const custom = interaction.options.getString("custom");
 
+        // VibeSec: allowlist URL schemes — new URL() alone accepts
+        // javascript:, data:, file: etc. Only http(s) may be shortened.
+        let parsed;
         try {
-            new URL(url);
+            parsed = new URL(url);
         } catch (e) {
             return replyUserError(interaction, {
                 type: ErrorTypes.VALIDATION,
                 message: 'Invalid URL format. Include http:// or https://',
+            });
+        }
+
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+            return replyUserError(interaction, {
+                type: ErrorTypes.VALIDATION,
+                message: 'Only http:// and https:// URLs can be shortened.',
             });
         }
 

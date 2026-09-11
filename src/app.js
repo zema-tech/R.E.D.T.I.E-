@@ -114,20 +114,38 @@ class TitanBot extends Client {
     const configuredPort = Number(this.config.api?.port || process.env.PORT || 3000);
     const maxPortRetryAttempts = Number(process.env.PORT_RETRY_ATTEMPTS || 5);
     const host = process.env.WEB_HOST || '0.0.0.0';
-    const corsOrigin = this.config.api?.cors?.origin || '*';
-    
+    // VibeSec: fail closed — no CORS reflection unless origins are configured.
+    // Set CORS_ORIGIN to a comma-separated allowlist; empty = no cross-origin access.
+    const rawCorsOrigin = this.config.api?.cors?.origin;
+    const corsOrigin = Array.isArray(rawCorsOrigin)
+      ? rawCorsOrigin.filter((o) => o && o !== '*')
+      : (typeof rawCorsOrigin === 'string' && rawCorsOrigin !== '*' ? [rawCorsOrigin] : []);
+    // Fail closed when behind a proxy: only trust X-Forwarded-For if explicitly enabled.
+    app.set('trust proxy', Number(process.env.TRUST_PROXY ?? 0));
+    app.disable('x-powered-by');
+
+    // VibeSec: baseline security headers (only GET JSON endpoints exist).
     app.use((req, res, next) => {
-      const allowedOrigins = Array.isArray(corsOrigin) ? corsOrigin : [corsOrigin];
+      res.header('X-Content-Type-Options', 'nosniff');
+      res.header('X-Frame-Options', 'DENY');
+      res.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+      res.header('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'; base-uri 'none'");
+      next();
+    });
+
+    app.use((req, res, next) => {
       const origin = req.headers.origin;
-      
-      if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
-        res.header('Access-Control-Allow-Origin', origin || '*');
+
+      if (origin && corsOrigin.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin);
+        res.header('Vary', 'Origin');
       }
-      res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      // Only GET routes exist on this server; do not advertise state-changing methods.
+      res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
       res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-      
+
       if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
+        return res.sendStatus(origin && !corsOrigin.includes(origin) ? 403 : 200);
       }
       next();
     });
@@ -135,22 +153,39 @@ class TitanBot extends Client {
     const requestCounts = new Map();
     const windowMs = this.config.api?.rateLimit?.windowMs || 60000;
     const maxRequests = this.config.api?.rateLimit?.max || 100;
-    
+    // VibeSec: bound the tracker so it cannot grow without limit (memory DoS).
+    const MAX_TRACKED_IPS = 5000;
+    const sweeper = setInterval(() => {
+      const cutoff = Date.now() - windowMs;
+      for (const [ip, times] of requestCounts) {
+        const fresh = times.filter((t) => t > cutoff);
+        if (fresh.length === 0) requestCounts.delete(ip);
+        else requestCounts.set(ip, fresh);
+      }
+    }, windowMs);
+    if (typeof sweeper.unref === 'function') sweeper.unref();
+    this._rateLimitSweeper = sweeper;
+
     app.use((req, res, next) => {
       const ip = req.ip;
       const now = Date.now();
       const windowStart = now - windowMs;
-      
+
       if (!requestCounts.has(ip)) {
+        // Evict the oldest entry instead of growing past the cap.
+        if (requestCounts.size >= MAX_TRACKED_IPS) {
+          const oldest = requestCounts.keys().next().value;
+          requestCounts.delete(oldest);
+        }
         requestCounts.set(ip, []);
       }
-      
+
       const times = requestCounts.get(ip).filter(t => t > windowStart);
-      
+
       if (times.length >= maxRequests) {
         return res.status(429).json({ error: 'Too many requests' });
       }
-      
+
       times.push(now);
       requestCounts.set(ip, times);
       next();
@@ -346,6 +381,10 @@ class TitanBot extends Client {
       await shutdownMusic(this);
       logger.info('✅ Music players stopped');
 
+      if (this._rateLimitSweeper) {
+        clearInterval(this._rateLimitSweeper);
+        this._rateLimitSweeper = null;
+      }
       if (this.webServer) {
         logger.info('Closing web server...');
         await new Promise((resolve) => this.webServer.close(resolve));
