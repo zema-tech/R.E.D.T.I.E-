@@ -9,6 +9,10 @@ import { getCommandPrefix, getBotMessage, isBotOwner, isCommandCategoryEnabled, 
 import { enforceAbuseProtection, formatCooldownDuration } from '../utils/abuseProtection.js';
 import { createEmbed } from '../utils/embeds.js';
 import { isCommandEnabled } from '../services/commandAccessService.js';
+import { isAiAvailable } from '../services/ai/groqClient.js';
+import { getAiSettings } from '../services/ai/aiConfig.js';
+import { scanTicketMessage } from '../services/ai/ticketAi.js';
+import { getTicketData } from '../utils/database.js';
 import {
   getCountingGameConfig,
   saveCountingGameConfig,
@@ -30,9 +34,80 @@ export default {
       }
 
       await handlePrefixCommand(message, client);
+
+      await handleTicketModeration(message, client);
     } catch (error) {
       logger.error('Error in messageCreate event:', error);
     }
+  }
+};
+
+// Last AI alert per channel — prevents alert spam during incidents.
+const ticketAlertCooldown = new Map();
+const TICKET_ALERT_COOLDOWN_MS = 60 * 1000;
+
+async function handleTicketModeration(message, client) {
+  try {
+    // Cheap gates first: no key, no work.
+    if (!isAiAvailable() || !message.content?.trim()) {
+      return;
+    }
+    // Skip bot commands (prefix or slash invocations).
+    const prefix = (await getGuildConfig(client, message.guild.id))?.prefix || getCommandPrefix();
+    if (message.content.startsWith(prefix)) {
+      return;
+    }
+
+    const settings = await getAiSettings(client, message.guild.id);
+    if (!settings.ticketModeration) {
+      return;
+    }
+
+    const ticketData = await getTicketData(message.guild.id, message.channel.id).catch(() => null);
+    if (!ticketData) {
+      return; // not a ticket channel
+    }
+
+    const scan = await scanTicketMessage(message.content, { sensitivity: settings.sensitivity });
+    if (!scan.flagged) {
+      return;
+    }
+
+    const now = Date.now();
+    if (now - (ticketAlertCooldown.get(message.channel.id) || 0) < TICKET_ALERT_COOLDOWN_MS) {
+      return;
+    }
+    ticketAlertCooldown.set(message.channel.id, now);
+
+    logger.info('AI ticket moderation flag', {
+      guildId: message.guild.id,
+      channelId: message.channel.id,
+      userId: message.author.id,
+      severity: scan.severity,
+      reasons: scan.reasons,
+    });
+
+    const reasons = scan.reasons.length ? `\n**Why:** ${scan.reasons.join(', ')}` : '';
+    if (scan.severity === 'high' || scan.action === 'alert_staff') {
+      await message.channel.send({
+        embeds: [createEmbed({
+          title: 'Staff Attention Needed',
+          description: `A message from ${message.author} was flagged by automatic moderation (severity: **${scan.severity}**).${reasons}\nPlease review it.`,
+          color: 'error',
+        })],
+      }).catch(() => {});
+      return;
+    }
+
+    const warning = await message.channel.send(
+      `${message.author}, please keep this ticket respectful and on-topic.${reasons}`,
+    ).catch(() => null);
+    if (warning) {
+      setTimeout(() => warning.delete().catch(() => {}), 30000);
+    }
+  } catch (error) {
+    // Moderation must never break message handling — fail open, log only.
+    logger.debug('Ticket moderation scan failed:', error?.message);
   }
 };
 

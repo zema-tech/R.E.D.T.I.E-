@@ -7,6 +7,10 @@ import { logger } from '../../utils/logger.js';
 import { handleInteractionError, replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 
 import ticketConfig from './modules/ticket_dashboard.js';
+import { isAiAvailable } from '../../services/ai/groqClient.js';
+import { getAiSettings, setAiSettings } from '../../services/ai/aiConfig.js';
+import { summarizeTicket, suggestTicketReply, getAiStats } from '../../services/ai/ticketAi.js';
+import { getTicketData } from '../../utils/database.js';
 
 export default {
     data: new SlashCommandBuilder()
@@ -90,6 +94,49 @@ export default {
             subcommand
                 .setName("dashboard")
                 .setDescription("Open the interactive ticket system dashboard"),
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("summarize")
+                .setDescription("AI summary of this ticket's conversation (staff only, inside a ticket)"),
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("suggest")
+                .setDescription("AI-drafted staff reply for this ticket")
+                .addStringOption((option) =>
+                    option
+                        .setName("hint")
+                        .setDescription("Direction for the draft (e.g. 'offer a refund')")
+                        .setRequired(false),
+                ),
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("ai-stats")
+                .setDescription("Show AI assistant accuracy from staff feedback"),
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("ai-config")
+                .setDescription("Configure the AI assistant for this server")
+                .addBooleanOption((option) =>
+                    option.setName("assistant").setDescription("Enable /ticket summarize + suggest").setRequired(false),
+                )
+                .addBooleanOption((option) =>
+                    option.setName("moderation").setDescription("Enable automatic ticket moderation scans").setRequired(false),
+                )
+                .addStringOption((option) =>
+                    option
+                        .setName("sensitivity")
+                        .setDescription("Moderation sensitivity")
+                        .setRequired(false)
+                        .addChoices(
+                            { name: 'Low', value: 'low' },
+                            { name: 'Balanced', value: 'balanced' },
+                            { name: 'Strict', value: 'strict' },
+                        ),
+                ),
         ),
     category: "ticket",
 
@@ -116,6 +163,10 @@ export default {
 
         if (subcommand === "dashboard") {
             return ticketConfig.execute(interaction, config, client);
+        }
+
+        if (subcommand === "summarize" || subcommand === "suggest" || subcommand === "ai-stats" || subcommand === "ai-config") {
+            return executeAiSubcommand(interaction, client, subcommand);
         }
 
         if (subcommand === "setup") {
@@ -297,3 +348,106 @@ description: panelMessage,
         }
     }
 };
+
+function aiFeedbackRow(kind) {
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`ai-feedback:up:${kind}`)
+            .setLabel('Helpful')
+            .setStyle(ButtonStyle.Success)
+            .setEmoji('👍'),
+        new ButtonBuilder()
+            .setCustomId(`ai-feedback:down:${kind}`)
+            .setLabel('Not helpful')
+            .setStyle(ButtonStyle.Secondary)
+            .setEmoji('👎'),
+    );
+}
+
+async function requireTicketChannel(interaction, client) {
+    const ticketData = await getTicketData(interaction.guildId, interaction.channelId).catch(() => null);
+    if (!ticketData) {
+        await replyUserError(interaction, {
+            type: ErrorTypes.USER_INPUT,
+            message: 'Run this inside a ticket channel.',
+        });
+        return null;
+    }
+    return ticketData;
+}
+
+async function executeAiSubcommand(interaction, client, subcommand) {
+    if (!isAiAvailable()) {
+        return replyUserError(interaction, {
+            type: ErrorTypes.CONFIGURATION,
+            message: 'The AI assistant is not configured (missing GROQ_API_KEY).',
+        });
+    }
+
+    if (subcommand === 'ai-stats') {
+        const stats = await getAiStats(client, interaction.guildId);
+        return InteractionHelper.safeEditReply(interaction, {
+            embeds: [
+                infoEmbed(
+                    'AI Assistant Stats',
+                    stats.total === 0
+                        ? 'No staff feedback recorded yet. Rate AI outputs with 👍/👎 to build accuracy stats.'
+                        : `**Feedback:** ${stats.total} (${stats.up} 👍 / ${stats.down} 👎)\n**Accuracy:** ${stats.accuracy}%`,
+                ),
+            ],
+        });
+    }
+
+    if (subcommand === 'ai-config') {
+        const patch = {};
+        const assistant = interaction.options.getBoolean('assistant');
+        const moderation = interaction.options.getBoolean('moderation');
+        const sensitivity = interaction.options.getString('sensitivity');
+        if (assistant !== null) patch.ticketAssistant = assistant;
+        if (moderation !== null) patch.ticketModeration = moderation;
+        if (sensitivity !== null) patch.sensitivity = sensitivity;
+        const settings = await setAiSettings(client, interaction.guildId, patch);
+        return InteractionHelper.safeEditReply(interaction, {
+            embeds: [
+                successEmbed(
+                    'AI Configuration',
+                    `**Assistant:** ${settings.ticketAssistant ? 'On' : 'Off'}\n**Ticket moderation:** ${settings.ticketModeration ? 'On' : 'Off'}\n**Sensitivity:** ${settings.sensitivity}`,
+                ),
+            ],
+        });
+    }
+
+    const settings = await getAiSettings(client, interaction.guildId);
+    if (!settings.ticketAssistant) {
+        return replyUserError(interaction, {
+            type: ErrorTypes.PERMISSION,
+            message: 'The AI assistant is disabled on this server.',
+        });
+    }
+
+    const ticketData = await requireTicketChannel(interaction, client);
+    if (!ticketData) {
+        return;
+    }
+
+    if (subcommand === 'summarize') {
+        const result = await summarizeTicket(interaction.channel);
+        if (result.error) {
+            return replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: result.error });
+        }
+        return InteractionHelper.safeEditReply(interaction, {
+            embeds: [infoEmbed('Ticket Summary', result.content)],
+            components: [aiFeedbackRow('summarize')],
+        });
+    }
+
+    const hint = interaction.options.getString('hint') || '';
+    const result = await suggestTicketReply(interaction.channel, hint);
+    if (result.error) {
+        return replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: result.error });
+    }
+    return InteractionHelper.safeEditReply(interaction, {
+        embeds: [warningEmbed('Suggested Reply (review before sending)', result.content)],
+        components: [aiFeedbackRow('suggest')],
+    });
+}
