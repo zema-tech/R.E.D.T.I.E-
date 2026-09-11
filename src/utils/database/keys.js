@@ -32,6 +32,8 @@ export function getFakeAccountKey(guildId, userId) {
     return `guild:${guildId}:fake_account:${userId}`;
 }
 
+// Legacy (economy/leveling removed): builders kept so wipedata can clean
+// orphaned records on existing deployments. No feature writes these keys.
 export function getEconomyKey(guildId, userId) {
     return `guild:${guildId}:economy:${userId}`;
 }

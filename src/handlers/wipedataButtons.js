@@ -117,7 +117,7 @@ const wipedataConfirmHandler = {
         `✅ **Your data has been successfully wiped!**\n\n` +
         `**Records Deleted:** ${deletedCount}\n\n` +
         `Your account has been reset to default values. You can now start fresh!\n\n` +
-        `*All your economy balance, levels, items, and personal data have been removed.*`;
+        `*All your warnings, notes, AFK status, and personal data have been removed (including any legacy economy/leveling records).*`;
 
       await interaction.editReply({
         embeds: [successEmbed('Data Wipe Complete', successMessage)],

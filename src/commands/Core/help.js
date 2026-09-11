@@ -24,10 +24,8 @@ const HELP_MENU_TIMEOUT_MS = 5 * 60 * 1000;
 const CATEGORY_ICONS = {
     Core: "ℹ️",
     Moderation: "🛡️",
-    Economy: "💰",
     Music: "🎵",
     Fun: "🎮",
-    Leveling: "📊",
     Utility: "🔧",
     Ticket: "🎫",
     Welcome: "👋",

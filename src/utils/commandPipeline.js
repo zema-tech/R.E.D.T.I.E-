@@ -4,7 +4,7 @@
  * Usage:
  *   export default defineSlashCommand({
  *     data: new SlashCommandBuilder()...,
- *     category: 'economy',
+ *     category: 'moderation',
  *     async execute(interaction, config, client) {
  *       // throw TitanBotError / createError on failure
  *       // use replyUserError for early validation returns

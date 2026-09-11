@@ -21,10 +21,8 @@ const SUBCOMMAND_GROUP_TYPE = 2;
 const CATEGORY_ICONS = {
     Core: "ℹ️",
     Moderation: "🛡️",
-    Economy: "💰",
     Music: "🎵",
     Fun: "🎮",
-    Leveling: "📊",
     Utility: "🔧",
     Ticket: "🎫",
     Welcome: "👋",
