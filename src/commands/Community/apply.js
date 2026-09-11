@@ -1,4 +1,4 @@
-import { getColor, getDefaultApplicationQuestions } from '../../config/bot.js';
+import { getDefaultApplicationQuestions } from '../../config/bot.js';
 import { SlashCommandBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { createEmbed, successEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
@@ -11,7 +11,6 @@ import { getGuildConfig } from '../../services/config/guildConfig.js';
 import { 
     getApplicationSettings, 
     getUserApplications, 
-    createApplication, 
     getApplication,
     getApplicationRoles,
     updateApplication,
@@ -75,7 +74,7 @@ export default {
             return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'This command can only be used in a server.' });
         }
 
-        const { options, guild, member } = interaction;
+        const { options, guild } = interaction;
         const subcommand = options.getSubcommand();
 
         if (subcommand !== "submit") {
@@ -268,7 +267,6 @@ async function handleList(interaction) {
 
 async function handleSubmit(interaction, settings) {
     const applicationName = interaction.options.getString("application");
-    const member = interaction.member;
 
     const applicationRoles = await getApplicationRoles(interaction.client, interaction.guild.id);
     

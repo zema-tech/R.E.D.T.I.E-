@@ -64,16 +64,13 @@ export {
 
 import { db, getFromDb, setInDb } from './database/wrapper.js';
 import {
-    getGuildConfigKey,
     getGuildBirthdaysKey,
     getApplicationRolesKey,
     getApplicationSettingsKey,
     getUserApplicationsKey,
     getApplicationKey,
     getJoinToCreateConfigKey,
-    getJoinToCreateChannelsKey,
     getWelcomeConfigKey,
-    getAFKKey,
 } from './database/keys.js';
 
 export async function insertVerificationAudit(record) {
@@ -1024,8 +1021,4 @@ export function formatChannelName(template, variables) {
 formatted = formatted.substring(0, 100);
     
     return formatted || 'Voice Channel';
-}
-
-function generateCaseId() {
-    return `${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 4)}`;
 }

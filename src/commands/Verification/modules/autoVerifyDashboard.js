@@ -19,8 +19,6 @@ import { logger } from '../../../utils/logger.js';
 import { TitanBotError, ErrorTypes, replyUserError } from '../../../utils/errorHandler.js';
 import { getGuildConfig, setGuildConfig } from '../../../services/config/guildConfig.js';
 import { getWelcomeConfig } from '../../../utils/database.js';
-import { validateAutoVerifyCriteria } from '../../../services/verificationService.js';
-import { botHasPermission } from '../../../utils/permissionGuard.js';
 
 const autoVerifyDefaults = botConfig.verification?.autoVerify || {};
 const minAccountAgeDays = autoVerifyDefaults.minAccountAge ?? 1;

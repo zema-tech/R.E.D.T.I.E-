@@ -3,7 +3,6 @@ import {
     ActionRowBuilder,
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder,
-    ChannelType,
     MessageFlags,
     ComponentType,
     EmbedBuilder,
@@ -17,8 +16,7 @@ import { TitanBotError, ErrorTypes, replyUserError } from '../../../utils/errorH
 import { 
     getJoinToCreateConfig, 
     updateJoinToCreateConfig,
-    removeJoinToCreateTrigger,
-    addJoinToCreateTrigger
+    removeJoinToCreateTrigger
 } from '../../../utils/database.js';
 
 export default {
@@ -496,7 +494,7 @@ async function handleRemoveTrigger(interaction, triggerChannel, currentConfig, c
     });
 }
 
-async function handleViewSettings(interaction, triggerChannel, currentConfig, client) {
+async function handleViewSettings(interaction, triggerChannel, currentConfig, _client) {
     const channelConfig = currentConfig.channelOptions?.[triggerChannel.id] || {};
     
     const embed = new EmbedBuilder()

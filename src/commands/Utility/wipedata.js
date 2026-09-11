@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
-import { createEmbed, errorEmbed, warningEmbed } from '../../utils/embeds.js';
+import { warningEmbed } from '../../utils/embeds.js';
 import { getConfirmationButtons } from '../../utils/components.js';
 import { logger } from '../../utils/logger.js';
 
@@ -10,7 +10,7 @@ export default {
         .setName('wipedata')
         .setDescription('Delete all your personal data from the bot (irreversible)'),
 
-    async execute(interaction, guildConfig, client) {
+    async execute(interaction, _guildConfig, _client) {
         const warningMessage = 
             `⚠️ **THIS ACTION IS IRREVERSIBLE!** ⚠️\n\n` +
             `This will permanently delete **ALL** your data from this server including:\n` +

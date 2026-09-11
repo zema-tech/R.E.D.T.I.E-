@@ -164,7 +164,6 @@ export function parseKey(key) {
  */
 export function getStructuredListPlan(prefix, tables) {
     const plan = { queries: [], staticKeys: [] };
-    const canonicalPrefix = canonicalizeKey(prefix.endsWith(':') ? prefix.slice(0, -1) : prefix);
     const normalizedPrefix = prefix.endsWith(':') ? prefix : `${prefix}:`;
 
     const addEconomy = (guildId) => {

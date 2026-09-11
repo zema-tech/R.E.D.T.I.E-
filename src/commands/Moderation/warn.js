@@ -231,7 +231,7 @@ async function handleList(interaction, config, client) {
     await InteractionHelper.safeEditReply(interaction, { embeds: [embed], components: [actionRow] });
 }
 
-async function handleClear(interaction, config, client) {
+async function handleClear(interaction, _config, _client) {
     const deferSuccess = await InteractionHelper.safeDefer(interaction);
     if (!deferSuccess) {
         logger.warn(`Warn clear interaction defer failed`, {

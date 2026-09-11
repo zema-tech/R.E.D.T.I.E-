@@ -1,5 +1,4 @@
-import { SlashCommandBuilder, MessageFlags, ChannelType } from 'discord.js';
-import { createEmbed, successEmbed } from '../../utils/embeds.js';
+import { SlashCommandBuilder, ChannelType } from 'discord.js';
 import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 
 import birthdaySet from './modules/birthday_set.js';
@@ -9,7 +8,6 @@ import birthdayRemove from './modules/birthday_remove.js';
 import nextBirthdays from './modules/next_birthdays.js';
 import birthdaySetchannel from './modules/birthday_setchannel.js';
 
-import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
         .setName('birthday')

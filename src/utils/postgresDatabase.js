@@ -53,7 +53,7 @@ class PostgreSQLDatabase {
 
                 this.pool = new pg.Pool(resolvePostgresPoolConfig());
 
-                this.pool.on('error', (error, client) => {
+                this.pool.on('error', (error, _client) => {
                     logger.error('PostgreSQL pool error:', error);
                 });
 

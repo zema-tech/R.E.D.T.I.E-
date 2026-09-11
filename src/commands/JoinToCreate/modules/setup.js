@@ -1,8 +1,8 @@
 import { ChannelType, MessageFlags, PermissionFlagsBits } from 'discord.js';
-import { successEmbed, errorEmbed } from '../../../utils/embeds.js';
+import { successEmbed } from '../../../utils/embeds.js';
 import { logger } from '../../../utils/logger.js';
 import { TitanBotError, ErrorTypes } from '../../../utils/errorHandler.js';
-import { addJoinToCreateTrigger, getJoinToCreateConfig } from '../../../utils/database.js';
+import { addJoinToCreateTrigger } from '../../../utils/database.js';
 
 import { InteractionHelper } from '../../../utils/interactionHelper.js';
 export default {

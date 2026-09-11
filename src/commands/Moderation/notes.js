@@ -1,12 +1,12 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags } from 'discord.js';
-import { createEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
+import { createEmbed, successEmbed, infoEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
 import { getFromDb, setInDb, getUserNotesKey } from '../../utils/database.js';
 import { getModerationCases } from '../../utils/moderation.js';
 import { sanitizeInput } from '../../utils/validation.js';
 
 import { InteractionHelper } from '../../utils/interactionHelper.js';
-import { replyUserError, ErrorTypes, TitanBotError } from '../../utils/errorHandler.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 
 export default {
     data: new SlashCommandBuilder()
@@ -292,7 +292,7 @@ async function handleClearNotes(interaction, targetUser, notes, guildId) {
     });
 }
 
-async function handleCases(interaction, config, client) {
+async function handleCases(interaction, _config, _client) {
     // The audit-log view keeps its original stricter gate: ViewAuditLog.
     if (!interaction.member?.permissions?.has(PermissionFlagsBits.ViewAuditLog)) {
         return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the "View Audit Log" permission to view moderation cases.' });

@@ -1,6 +1,5 @@
 // memoryStorage.js
 
-import { logger } from './logger.js';
 
 class MemoryStorage {
     constructor() {

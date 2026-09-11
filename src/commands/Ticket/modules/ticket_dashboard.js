@@ -8,7 +8,6 @@ import {
     TextInputStyle,
     RoleSelectMenuBuilder,
     ChannelSelectMenuBuilder,
-    UserSelectMenuBuilder,
     ButtonBuilder,
     ButtonStyle,
     ChannelType,
@@ -22,7 +21,6 @@ import { logger } from '../../../utils/logger.js';
 import { TitanBotError, ErrorTypes, replyUserError } from '../../../utils/errorHandler.js';
 import { getGuildConfig, setGuildConfig } from '../../../services/config/guildConfig.js';
 import { getGuildTicketStats } from '../../../utils/database/tickets.js';
-import { getUserTicketCount } from '../../../services/ticket.js';
 import {
     getTicketPanelStatus,
     messageHasButtonCustomId,
@@ -804,71 +802,6 @@ async function handleTranscriptChannel(selectInteraction, rootInteraction, guild
             replyUserError(selectInteraction, {
                 type: ErrorTypes.RATE_LIMIT,
                 message: 'No channel selected. No changes were made.',
-            }).catch(() => {});
-        }
-    });
-}
-
-async function handleCheckUser(selectInteraction, rootInteraction, guildConfig, guildId, client) {
-    await selectInteraction.deferUpdate();
-
-    const userSelect = new UserSelectMenuBuilder()
-        .setCustomId('ticket_cfg_check_user')
-        .setPlaceholder('Select a user to check...')
-        .setMaxValues(1);
-
-    const row = new ActionRowBuilder().addComponents(userSelect);
-
-    await selectInteraction.followUp({
-        embeds: [
-            new EmbedBuilder()
-                .setTitle('Check User Tickets')
-                .setDescription('Select a user to view their current open ticket count.')
-                .setColor(getColor('info')),
-        ],
-        components: [row],
-        flags: MessageFlags.Ephemeral,
-    });
-
-    const userCollector = rootInteraction.channel.createMessageComponentCollector({
-        componentType: ComponentType.UserSelect,
-        filter: i =>
-            i.user.id === selectInteraction.user.id && i.customId === 'ticket_cfg_check_user',
-        time: 60_000,
-        max: 1,
-    });
-
-    userCollector.on('collect', async userInteraction => {
-        await userInteraction.deferUpdate();
-        const targetUser = userInteraction.users.first();
-        const maxTickets = guildConfig.maxTicketsPerUser || 3;
-        const openCount = await getUserTicketCount(guildId, targetUser.id);
-        const atLimit = openCount >= maxTickets;
-
-        await userInteraction.followUp({
-            embeds: [
-                new EmbedBuilder()
-                    .setTitle(`Ticket Check — ${targetUser.username}`)
-                    .setDescription(
-                        `**Open Tickets:** ${openCount} / ${maxTickets}\n` +
-                            `**Remaining:** ${Math.max(0, maxTickets - openCount)}\n\n` +
-                            (atLimit
-                                ? '⚠️ This user has reached their ticket limit.'
-                                : '✅ This user can still open more tickets.'),
-                    )
-                    .setColor(atLimit ? getColor('error') : getColor('success'))
-                    .setThumbnail(targetUser.displayAvatarURL({ size: 64 }))
-                    .setTimestamp(),
-            ],
-            flags: MessageFlags.Ephemeral,
-        });
-    });
-
-    userCollector.on('end', (collected, reason) => {
-        if (reason === 'time' && collected.size === 0) {
-            replyUserError(selectInteraction, {
-                type: ErrorTypes.RATE_LIMIT,
-                message: 'No user was selected.',
             }).catch(() => {});
         }
     });

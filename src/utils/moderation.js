@@ -140,8 +140,6 @@ export async function getModerationCases(guildId, filters = {}) {
   try {
     const { userId, moderatorId, action, limit = 50, offset = 0 } = filters;
     
-    const allCases = [];
-    
     const caseListKey = `moderation_cases_list_${guildId}`;
     const caseList = await getFromDb(caseListKey, []);
     

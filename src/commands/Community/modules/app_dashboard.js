@@ -1,4 +1,4 @@
-import { getColor, getDefaultApplicationQuestions, botConfig } from '../../../config/bot.js';
+import { getColor, getDefaultApplicationQuestions } from '../../../config/bot.js';
 import {
     ActionRowBuilder,
     StringSelectMenuBuilder,
@@ -194,60 +194,6 @@ export default {
         }
     },
 };
-
-async function showApplicationSelector(interaction, roles, settings, guildId, client) {
-    const selectMenu = new StringSelectMenuBuilder()
-        .setCustomId(`app_select_${guildId}`)
-        .setPlaceholder('Select an application to configure...')
-        .addOptions(
-            roles.map(role =>
-                new StringSelectMenuOptionBuilder()
-                    .setLabel(role.name)
-                    .setDescription(`Configure the ${role.name} application`)
-                    .setValue(role.roleId)
-                    .setEmoji('📋'),
-            ),
-        );
-
-    const embed = new EmbedBuilder()
-        .setTitle('Select Application')
-        .setDescription('Choose which application role you want to configure.')
-        .setColor(getColor('info'));
-
-    await InteractionHelper.safeEditReply(interaction, {
-        embeds: [embed],
-        components: [new ActionRowBuilder().addComponents(selectMenu)],
-    });
-
-    const collector = interaction.channel.createMessageComponentCollector({
-        componentType: ComponentType.StringSelect,
-        filter: i =>
-            i.user.id === interaction.user.id && i.customId === `app_select_${guildId}`,
-        time: 600_000,
-        max: 1,
-    });
-
-    collector.on('collect', async selectInteraction => {
-        const deferred = await safeDeferInteraction(selectInteraction);
-        if (!deferred) return;
-        
-        const selectedRoleId = selectInteraction.values[0];
-        const selectedRole = roles.find(r => r.roleId === selectedRoleId);
-
-        if (selectedRole) {
-            await showApplicationDashboard(interaction, selectedRole, settings, roles, guildId, client);
-        }
-    });
-
-    collector.on('end', (collected, reason) => {
-        if (reason === 'time' && collected.size === 0) {
-            replyUserError(interaction, {
-                type: ErrorTypes.RATE_LIMIT,
-                message: 'No selection was made. The dashboard has closed.',
-            }).catch(() => {});
-        }
-    });
-}
 
 async function showGlobalDashboard(interaction, settings, roles, guildId, client) {
     const selectMenu = buildSelectMenu(guildId);
@@ -674,12 +620,6 @@ function buildApplicationSelectMenu(guildId, roleId) {
 }
 
 async function handleLogChannel(selectInteraction, rootInteraction, settings, roles, guildId, client, selectedRoleId) {
-    let currentChannel = settings.logChannelId;
-    if (selectedRoleId) {
-        const roleSettings = await getApplicationRoleSettings(client, guildId, selectedRoleId);
-        currentChannel = roleSettings.logChannelId || settings.logChannelId;
-    }
-
     const modal = new ModalBuilder()
         .setCustomId(`app_cfg_log_channel_modal_${guildId}_${selectedRoleId || 'global'}`)
         .setTitle('Configure Log Channel');

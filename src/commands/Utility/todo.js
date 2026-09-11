@@ -1,5 +1,5 @@
-import { SlashCommandBuilder, PermissionFlagsBits, PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { createEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { successEmbed } from '../../utils/embeds.js';
 import { getFromDb, setInDb } from '../../utils/database.js';
 import { logger } from '../../utils/logger.js';
 import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
@@ -134,7 +134,7 @@ export default {
         .setDefaultMemberPermissions(PermissionFlagsBits.SendMessages),
     category: "Utility",
 
-    async execute(interaction, config, client) {
+    async execute(interaction, _config, _client) {
         const userId = interaction.user.id;
                 const subcommand = interaction.options.getSubcommand();
                 const shareSubcommand = interaction.options.getSubcommandGroup() === 'share' ? interaction.options.getSubcommand() : null;

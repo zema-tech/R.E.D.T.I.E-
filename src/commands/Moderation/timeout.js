@@ -142,7 +142,7 @@ async function handleAdd(interaction, config, client) {
     });
 }
 
-async function handleRemove(interaction, config, client) {
+async function handleRemove(interaction, _config, _client) {
     const deferSuccess = await InteractionHelper.safeDefer(interaction);
     if (!deferSuccess) {
         logger.warn(`Untimeout interaction defer failed`, {

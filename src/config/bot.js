@@ -419,7 +419,7 @@ export const botConfig = {
   },
 };
 
-export function validateConfig(config) {
+export function validateConfig(_config) {
   const errors = [];
 
   if (process.env.NODE_ENV !== 'production') {

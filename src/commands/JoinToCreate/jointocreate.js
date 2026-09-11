@@ -86,8 +86,6 @@ export default {
             const subcommand = interaction.options.getSubcommand();
             await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
 
-            let responseEmbed;
-
             if (subcommand === "setup") {
                 await handleSetupSubcommand(interaction, client);
                 return;
@@ -183,7 +181,7 @@ async function handleSetupSubcommand(interaction, client) {
 
         logger.debug(`Created trigger channel ${triggerChannel.id}, initializing config...`);
 
-        const config = await initializeJoinToCreate(client, guildId, triggerChannel.id, {
+        await initializeJoinToCreate(client, guildId, triggerChannel.id, {
             nameTemplate: nameTemplate,
             userLimit: userLimit,
             bitrate: bitrate * 1000,

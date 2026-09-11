@@ -28,15 +28,6 @@ export default {
                 continue;
             }
             displayIndex++;
-
-            let timeUntil = '';
-            if (birthday.daysUntil === 0) {
-                timeUntil = '🎉 **Today!**';
-            } else if (birthday.daysUntil === 1) {
-                timeUntil = '📅 **Tomorrow!**';
-            } else {
-                timeUntil = `In ${birthday.daysUntil} day${birthday.daysUntil > 1 ? 's' : ''}`;
-            }
         }
 
         if (displayIndex === 0) {

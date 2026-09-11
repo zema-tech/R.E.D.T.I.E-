@@ -1,4 +1,3 @@
-import { MessageFlags } from 'discord.js';
 import { createEmbed, successEmbed } from '../utils/embeds.js';
 import { performDeletionByCounterId } from '../commands/ServerStats/modules/serverstats_delete.js';
 import { logger } from '../utils/logger.js';

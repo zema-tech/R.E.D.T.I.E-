@@ -6,7 +6,6 @@ import { handleInteractionError, createError, ErrorTypes } from './errorHandler.
 import { ResponseCoordinator } from './responseCoordinator.js';
 
 const INTERACTION_TIMEOUT_MS = 15 * 60 * 1000;
-const DEFAULT_DEFER_OPTIONS = { flags: MessageFlags.Ephemeral };
 const INTERACTION_UNAVAILABLE_CODES = new Set([10062, 40060, 50027]);
 
 function isInteractionUnavailableError(error) {
@@ -18,7 +17,7 @@ function sanitizeEditReplyOptions(options = {}) {
         return options;
     }
 
-    const { flags, ephemeral, ...rest } = options;
+    const { flags, ephemeral: _ephemeral, ...rest } = options;
 
     if (flags && (flags & MessageFlags.IsComponentsV2)) {
         rest.flags = MessageFlags.IsComponentsV2;

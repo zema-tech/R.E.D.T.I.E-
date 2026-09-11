@@ -64,7 +64,6 @@ export async function loadCommands(client) {
         try {
             const normalizedPath = filePath.replace(/\\/g, '/');
             
-            const commandName = path.basename(filePath, '.js');
             const commandDir = path.dirname(filePath);
             const category = path.basename(commandDir);
             
@@ -100,17 +99,8 @@ export async function loadCommands(client) {
         }
     }
     
-    const commandsWithSubcommands = Array.from(client.commands.values()).filter(cmd => {
-        const subcommands = getSubcommandInfo(cmd.data.toJSON());
-        return subcommands.length > 0;
-    });
-    
-    const totalSubcommands = commandsWithSubcommands.reduce((total, cmd) => {
-        return total + getSubcommandInfo(cmd.data.toJSON()).length;
-    }, 0);
-    
     const uniqueCommands = new Set();
-    for (const [name, command] of client.commands.entries()) {
+    for (const [_name, command] of client.commands.entries()) {
         if (command.data && command.data.name) {
             uniqueCommands.add(command.data.name);
         }

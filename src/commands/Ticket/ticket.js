@@ -1,5 +1,5 @@
 import { getColor } from '../../config/bot.js';
-import { SlashCommandBuilder, PermissionFlagsBits, PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
 import { createEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
 import { getGuildConfig, setGuildConfig } from '../../services/config/guildConfig.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
@@ -294,14 +294,8 @@ description: panelMessage,
                 
                 successMessage += `\n\n**Max Tickets Per User:** ${maxTicketsPerUser}\n**DM on Close:** ${dmOnClose ? 'Enabled' : 'Disabled'}`;
 
-                await InteractionHelper.safeEditReply(interaction, {
-                    embeds: [
-                        successEmbed(
-                            "Ticket Panel Set Up",
-                            successMessage,
-                        ),
-                    ],
-                });
+                // The detailed configuration log is built below and sent
+                // together with this summary (single edit, no extra message).
 
                 logger.info('Ticket panel setup completed', {
                     userId: interaction.user.id,
@@ -365,6 +359,16 @@ description: panelMessage,
                         },
                     );
 
+                await InteractionHelper.safeEditReply(interaction, {
+                    embeds: [
+                        successEmbed(
+                            "Ticket Panel Set Up",
+                            successMessage,
+                        ),
+                        logEmbed,
+                    ],
+                });
+
             } catch (error) {
                 logger.error('Ticket setup error', {
                     error: error.message,
@@ -406,7 +410,7 @@ function aiFeedbackRow(kind) {
     );
 }
 
-async function requireTicketChannel(interaction, client) {
+async function requireTicketChannel(interaction, _client) {
     const ticketData = await getTicketData(interaction.guildId, interaction.channelId).catch(() => null);
     if (!ticketData) {
         await replyUserError(interaction, {

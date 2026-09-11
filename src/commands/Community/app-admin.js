@@ -1,18 +1,15 @@
-import { SlashCommandBuilder, PermissionFlagsBits, PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ComponentType, LabelBuilder, RoleSelectMenuBuilder } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ComponentType, LabelBuilder, RoleSelectMenuBuilder } from 'discord.js';
 import { createEmbed, successEmbed } from '../../utils/embeds.js';
-import { getColor, getApplicationStatusColor } from '../../config/bot.js';
+import { getApplicationStatusColor } from '../../config/bot.js';
 import { logger } from '../../utils/logger.js';
-import { withErrorHandling, createError, ErrorTypes, replyUserError } from '../../utils/errorHandler.js';
+import { withErrorHandling, ErrorTypes, replyUserError } from '../../utils/errorHandler.js';
 import ApplicationService from '../../services/applicationService.js';
 import { 
     getApplicationSettings, 
-    saveApplicationSettings, 
     getApplication, 
-    getApplications, 
-    updateApplication,
+    getApplications,
     getApplicationRoles,
     saveApplicationRoles,
-    getApplicationRoleSettings,
     saveApplicationRoleSettings,
     deleteApplication
 } from '../../utils/database.js';
@@ -364,7 +361,7 @@ async function handleReview(interaction) {
             const action = isApprove ? 'approve' : 'deny';
             const status = isApprove ? 'approved' : 'denied';
 
-            const updatedApplication = await ApplicationService.reviewApplication(
+            await ApplicationService.reviewApplication(
                 reasonSubmit.client,
                 interaction.guild.id,
                 appId,

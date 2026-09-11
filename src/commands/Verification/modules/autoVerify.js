@@ -1,6 +1,6 @@
-import { botConfig, getColor } from '../../../config/bot.js';
-import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
-import { createEmbed, errorEmbed, successEmbed, infoEmbed } from '../../../utils/embeds.js';
+import { botConfig } from '../../../config/bot.js';
+import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
+import { successEmbed } from '../../../utils/embeds.js';
 import { getGuildConfig, setGuildConfig } from '../../../services/config/guildConfig.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../../utils/errorHandler.js';
 import { validateAutoVerifyCriteria } from '../../../services/verificationService.js';

@@ -249,6 +249,15 @@ Notes:
    npm start
    ```
 
+## Development
+
+```bash
+npm test        # vitest suite (utils, parsers, rate limiter, counting game)
+npm run lint    # ESLint quality gate — must be clean before pushing
+```
+
+CI (`.github/workflows/ci.yml`) runs `npm ci` + lint + test on every push/PR to `main`. Brand rules for new commands live in [docs/brand-guidelines.md](docs/brand-guidelines.md).
+
 > **Note on database migrations:** Schema tables and legacy key migrations run
 > **automatically on startup**, so managed hosts like **Railway** need no manual
 > migration step — just deploy/restart. To disable auto-migration set

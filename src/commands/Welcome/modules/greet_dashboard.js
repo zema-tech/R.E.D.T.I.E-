@@ -536,26 +536,6 @@ async function handleWelcomeImage(selectInteraction, rootInteraction, cfg, guild
     await refreshDashboard(rootInteraction, cfg, guildId);
 }
 
-async function handleWelcomePing(selectInteraction, rootInteraction, cfg, guildId, client) {
-    if (!await deferComponent(selectInteraction)) {
-        return;
-    }
-
-    cfg.welcomePing = !cfg.welcomePing;
-    await saveWelcomeConfig(client, guildId, cfg);
-
-    await sendEphemeralFollowUp(selectInteraction, {
-        embeds: [
-            successEmbed(
-                '✅ Welcome Ping Updated',
-                `Joining users will${cfg.welcomePing ? '' : ' **not**'} be pinged in the welcome message.`,
-            ),
-        ],
-    });
-
-    await refreshDashboard(rootInteraction, cfg, guildId);
-}
-
 async function handleGoodbyeChannel(selectInteraction, rootInteraction, cfg, guildId, client) {
     if (!await deferComponent(selectInteraction)) {
         return;
@@ -745,26 +725,6 @@ async function handleGoodbyeImage(selectInteraction, rootInteraction, cfg, guild
     await submitted.reply({
         embeds: [successEmbed('Goodbye Image Updated', `Image ${imageUrl ? 'updated' : 'removed'} successfully.`)],
         flags: MessageFlags.Ephemeral,
-    });
-
-    await refreshDashboard(rootInteraction, cfg, guildId);
-}
-
-async function handleGoodbyePing(selectInteraction, rootInteraction, cfg, guildId, client) {
-    if (!await deferComponent(selectInteraction)) {
-        return;
-    }
-
-    cfg.goodbyePing = !cfg.goodbyePing;
-    await saveWelcomeConfig(client, guildId, cfg);
-
-    await sendEphemeralFollowUp(selectInteraction, {
-        embeds: [
-            successEmbed(
-                '✅ Goodbye Ping Updated',
-                `Leaving users will${cfg.goodbyePing ? '' : ' **not**'} be pinged in the goodbye message.`,
-            ),
-        ],
     });
 
     await refreshDashboard(rootInteraction, cfg, guildId);

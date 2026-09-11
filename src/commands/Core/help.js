@@ -5,6 +5,7 @@ import {
     ButtonStyle,
 } from "discord.js";
 import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { logger } from '../../utils/logger.js';
 import { createEmbed } from "../../utils/embeds.js";
 import {
     createSelectMenu,
@@ -143,8 +144,6 @@ export default {
         .setDescription("Displays the help menu with all available commands"),
 
     async execute(interaction, guildConfig, client) {
-        
-        const { MessageFlags } = await import('discord.js');
         await InteractionHelper.safeDefer(interaction);
         
         const { embeds, components } = await createInitialHelpMenu(client);

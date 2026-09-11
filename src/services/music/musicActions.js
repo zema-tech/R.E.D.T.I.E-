@@ -138,7 +138,7 @@ export async function playQuery(client, interaction, query) {
         );
     }
 
-    const { player, guildData } = await ensurePlayer(client, interaction);
+    const { player } = await ensurePlayer(client, interaction);
 
     const result = await client.riffy.resolve({
         query,

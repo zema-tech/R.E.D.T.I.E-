@@ -128,10 +128,6 @@ function getCounterTypeDisplay(type) {
     return `${getCounterTypeEmoji(type)} ${getCounterTypeLabel(type)}`;
 }
 
-function getCounterEmoji(type) {
-    return getCounterTypeEmoji(type);
-}
-
 function getCurrentCount(stats, type) {
     switch (type) {
         case "members":

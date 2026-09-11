@@ -139,7 +139,7 @@ const wipedataConfirmHandler = {
 
 const wipedataCancelHandler = {
   name: 'wipedata_no',
-  async execute(interaction, client) {
+  async execute(interaction, _client) {
     try {
       await interaction.update({
         embeds: [

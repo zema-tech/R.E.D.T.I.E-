@@ -7,7 +7,7 @@ import { logger } from '../utils/logger.js';
 import { replyUserError, ErrorTypes } from '../utils/errorHandler.js';
 const warningDeleteSpecificHandler = {
   name: 'warning_delete_specific',
-  async execute(interaction, client) {
+  async execute(interaction, _client) {
     try {
       const [, targetUserId, originalModeratorId] = interaction.customId.split(':');
       
@@ -40,16 +40,13 @@ const warningDeleteSpecificHandler = {
 
 const warningClearAllHandler = {
   name: 'warning_clear_all',
-  async execute(interaction, client) {
+  async execute(interaction, _client) {
     try {
       const [, targetUserId, originalModeratorId] = interaction.customId.split(':');
       
       if (interaction.user.id !== originalModeratorId) {
         return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Only the moderator who viewed these warnings can clear them.' });
       }
-
-      const targetUser = await client.users.fetch(targetUserId).catch(() => null);
-      const targetName = targetUser ? targetUser.username : 'this user';
 
       const clearModal = new ModalBuilder()
         .setCustomId(`warning_clear_confirm_modal:${targetUserId}:${interaction.user.id}`)

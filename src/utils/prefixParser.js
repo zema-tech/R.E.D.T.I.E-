@@ -86,11 +86,11 @@ export function mapArgumentsToOptions(args, commandData) {
     
     return {
       _positional: args,
-      get: (name) => args[0] || null,
-      getString: (name) => args[0] || null,
-      getUser: (name) => null,
-      getInteger: (name) => parseInt(args[0]) || null,
-      getBoolean: (name) => args[0] === 'true',
+      get: (_name) => args[0] || null,
+      getString: (_name) => args[0] || null,
+      getUser: (_name) => null,
+      getInteger: (_name) => parseInt(args[0]) || null,
+      getBoolean: (_name) => args[0] === 'true',
       getSubcommand: () => null,
       getSubcommandGroup: () => null,
       validateRequired: () => ({ valid: true, missing: [] })

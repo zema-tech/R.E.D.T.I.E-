@@ -1,14 +1,10 @@
-import { getColor } from '../../config/bot.js';
-import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ChannelType } from 'discord.js';
-import { createEmbed, successEmbed } from '../../utils/embeds.js';
-import { logger } from '../../utils/logger.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
 
 import { handleCreate } from './modules/serverstats_create.js';
 import { handleList } from './modules/serverstats_list.js';
 import { handleUpdate } from './modules/serverstats_update.js';
 import { handleDelete } from './modules/serverstats_delete.js';
 
-import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 export default {
     data: new SlashCommandBuilder()

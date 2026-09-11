@@ -9,7 +9,7 @@ function evaluate(expression) {
 
 async function calculateModalHandler(interaction, client, args) {
     try {
-        const operation = args[0];
+        const _operation = args[0];
         // ModalSubmitFields has no .first() — locate the operand input by
         // its customId prefix (built as `operand:<userId>_<operation>`).
         const operandField = [...interaction.fields.fields.values()].find(
@@ -41,7 +41,7 @@ async function calculateModalHandler(interaction, client, args) {
             return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please provide a valid number.' });
         }
 
-        const { expression, formattedResult, operator } = context;
+        const { expression, operator } = context;
         const newExpression = `(${expression}) ${operator} (${operand})`;
 
         let newResult;

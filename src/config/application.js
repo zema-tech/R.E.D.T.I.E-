@@ -1,6 +1,6 @@
 import { fileURLToPath } from "url";
 import path from "path";
-import botConfig, { validateConfig } from "./bot.js";
+import botConfig from "./bot.js";
 import { pgConfig } from "./database/postgres.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
