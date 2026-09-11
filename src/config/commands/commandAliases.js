@@ -12,11 +12,14 @@ export const commandAliases = {
     'ban': 'ban',
     'kick': 'kick',
     'mute': 'timeout',
+    'unmute': 'timeout',
     'warn': 'warn',
     'clear': 'purge',
     'purge': 'purge',
-    'untimeout': 'untimeout',
-    'unmute': 'untimeout',
+    'lock': 'lock',
+    'unlock': 'lock',
+    'note': 'notes',
+    'notes': 'notes',
 
     'user': 'userinfo',
     'avatar': 'avatar',
@@ -26,12 +29,6 @@ export const commandAliases = {
     'bd': 'birthday',
     'bday': 'birthday',
     'b': 'birthday',
-
-    'flip': 'flip',
-    'coin': 'flip',
-    'roll': 'roll',
-    'dice': 'roll',
-    'fight': 'fight',
 
     'gcreate': 'gcreate',
     'gstart': 'gcreate',
@@ -46,11 +43,10 @@ export const commandAliases = {
     'new': 'ticket',
 
     'ver': 'verify',
-    'vadmin': 'verification',
+    'vadmin': 'verification-setup',
     'av': 'autoverify',
 
     'welcome': 'welcome',
-    'greet': 'greet',
     'goodbye': 'goodbye',
     'autorole': 'autorole',
 
@@ -72,9 +68,6 @@ export const commandAliases = {
 
     'jtc': 'jointocreate',
     'jointocreate': 'jointocreate',
-
-    'np': 'nowplaying',
-    'now': 'nowplaying',
 };
 
 export const subcommandAliases = {

@@ -7,6 +7,8 @@ import { logger } from '../../utils/logger.js';
 import { handleInteractionError, replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 
 import ticketConfig from './modules/ticket_dashboard.js';
+import { getTicketPermissionContext } from '../../utils/ticket/ticketPermissions.js';
+import { closeTicket, claimTicket, updateTicketPriority } from '../../services/ticket.js';
 import { isAiAvailable } from '../../services/ai/groqClient.js';
 import { getAiSettings, setAiSettings } from '../../services/ai/aiConfig.js';
 import { summarizeTicket, suggestTicketReply, getAiStats } from '../../services/ai/ticketAi.js';
@@ -137,6 +139,40 @@ export default {
                             { name: 'Strict', value: 'strict' },
                         ),
                 ),
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("close")
+                .setDescription("Close the current ticket")
+                .addStringOption((option) =>
+                    option
+                        .setName("reason")
+                        .setDescription("The reason for closing the ticket")
+                        .setRequired(false),
+                ),
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("claim")
+                .setDescription("Claim this ticket, assigning it to you"),
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("priority")
+                .setDescription("Set the priority level for the current ticket")
+                .addStringOption((option) =>
+                    option
+                        .setName("level")
+                        .setDescription("The priority level for the ticket")
+                        .setRequired(true)
+                        .addChoices(
+                            { name: "Urgent", value: "urgent" },
+                            { name: "High", value: "high" },
+                            { name: "Medium", value: "medium" },
+                            { name: "Low", value: "low" },
+                            { name: "None", value: "none" },
+                        ),
+                ),
         ),
     category: "ticket",
 
@@ -144,6 +180,14 @@ export default {
         const deferred = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
         if (!deferred) {
             return;
+        }
+
+        const subcommand = interaction.options.getSubcommand();
+
+        // Ticket-channel operations keep their own per-subcommand permission
+        // checks (staff role / ticket creator), NOT the ManageChannels gate below.
+        if (subcommand === "close" || subcommand === "claim" || subcommand === "priority") {
+            return executeTicketOpSubcommand(interaction, client, subcommand);
         }
 
         if (
@@ -158,8 +202,6 @@ export default {
             });
             return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the `Manage Channels` permission for this action.' });
         }
-
-        const subcommand = interaction.options.getSubcommand();
 
         if (subcommand === "dashboard") {
             return ticketConfig.execute(interaction, config, client);
@@ -449,5 +491,100 @@ async function executeAiSubcommand(interaction, client, subcommand) {
     return InteractionHelper.safeEditReply(interaction, {
         embeds: [warningEmbed('Suggested Reply (review before sending)', result.content)],
         components: [aiFeedbackRow('suggest')],
+    });
+}
+
+async function executeTicketOpSubcommand(interaction, client, subcommand) {
+    const permissionContext = await getTicketPermissionContext({ client, interaction });
+    if (!permissionContext.ticketData) {
+        return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'This command can only be used in a valid ticket channel.' });
+    }
+
+    if (subcommand === 'close') {
+        // Ticket creator may close their own ticket; staff (ManageChannels or
+        // ticket staff role) may close any ticket.
+        if (!permissionContext.canCloseTicket) {
+            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the `Manage Channels` permission, the configured `Ticket Staff Role`, or be the ticket creator to close this ticket.' });
+        }
+
+        const reason =
+            interaction.options?.getString("reason") ||
+            "Closed via command without a specific reason.";
+
+        await closeTicket(interaction.channel, interaction.user, reason);
+
+        await InteractionHelper.safeEditReply(interaction, {
+            embeds: [
+                successEmbed(
+                    "Ticket Closed!",
+                    "This ticket has been closed successfully.",
+                ),
+            ],
+        });
+
+        logger.info('Ticket closed successfully', {
+            userId: interaction.user.id,
+            userTag: interaction.user.tag,
+            channelId: interaction.channel.id,
+            channelName: interaction.channel.name,
+            guildId: interaction.guildId,
+            reason: reason,
+            commandName: 'ticket close'
+        });
+        return;
+    }
+
+    if (subcommand === 'claim') {
+        if (!permissionContext.canManageTicket) {
+            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the `Manage Channels` permission or the configured `Ticket Staff Role` to claim tickets.' });
+        }
+
+        await claimTicket(interaction.channel, interaction.user);
+
+        await InteractionHelper.safeEditReply(interaction, {
+            embeds: [
+                successEmbed(
+                    "Ticket Claimed!",
+                    "You have successfully claimed this ticket.",
+                ),
+            ],
+        });
+
+        logger.info('Ticket claimed successfully', {
+            userId: interaction.user.id,
+            userTag: interaction.user.tag,
+            channelId: interaction.channel.id,
+            channelName: interaction.channel.name,
+            guildId: interaction.guildId,
+            commandName: 'ticket claim'
+        });
+        return;
+    }
+
+    // subcommand === 'priority'
+    if (!permissionContext.canManageTicket) {
+        return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the `Manage Channels` permission or the configured `Ticket Staff Role` to change ticket priority.' });
+    }
+
+    const priorityLevel = interaction.options.getString("level");
+    await updateTicketPriority(interaction.channel, priorityLevel, interaction.user);
+
+    await InteractionHelper.safeEditReply(interaction, {
+        embeds: [
+            successEmbed(
+                "Priority Updated",
+                `Ticket priority set to **${priorityLevel.toUpperCase()}**.`,
+            ),
+        ],
+    });
+
+    logger.info('Ticket priority updated successfully', {
+        userId: interaction.user.id,
+        userTag: interaction.user.tag,
+        channelId: interaction.channel.id,
+        channelName: interaction.channel.name,
+        guildId: interaction.guildId,
+        priority: priorityLevel,
+        commandName: 'ticket priority'
     });
 }

@@ -5,6 +5,7 @@ import { formatWelcomeMessage, truncateForEmbedField } from '../../utils/welcome
 import { logger } from '../../utils/logger.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { ErrorTypes, replyUserError } from '../../utils/errorHandler.js';
+import greetDashboard from './modules/greet_dashboard.js';
 
 export default {
     data: new SlashCommandBuilder()
@@ -31,9 +32,25 @@ export default {
                 .addBooleanOption(option =>
                     option.setName('ping')
                         .setDescription('Whether to ping the user in the welcome message')
-                        .setRequired(false))),
+                        .setRequired(false)))
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('dashboard')
+                .setDescription('Open the welcome & goodbye configuration dashboard')),
 
-    async execute(interaction) {
+    async execute(interaction, config, client) {
+        const { options, guild } = interaction;
+
+        if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the **Manage Server** permission to use `/welcome`.' });
+        }
+
+        const subcommand = options.getSubcommand();
+
+        if (subcommand === 'dashboard') {
+            return await greetDashboard.execute(interaction, config, client);
+        }
+
         try {
             const deferSuccess = await InteractionHelper.safeDefer(interaction);
             if (!deferSuccess) {
@@ -49,14 +66,6 @@ export default {
             return;
         }
 
-        const { options, guild, client } = interaction;
-
-        if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the **Manage Server** permission to use `/welcome`.' });
-        }
-
-        const subcommand = options.getSubcommand();
-
         if (subcommand === 'setup') {
             const channel = options.getChannel('channel');
             const message = options.getString('message');
@@ -66,7 +75,7 @@ export default {
             const existingConfig = await getWelcomeConfig(client, guild.id);
             if (existingConfig?.channelId) {
                 logger.info(`[Welcome] Setup blocked because config already exists in channel ${existingConfig.channelId} for guild ${guild.id}`);
-                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `Welcome is already configured for <#${existingConfig.channelId}>. Use **/greet dashboard** to customize channel, message, ping, or image.` });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `Welcome is already configured for <#${existingConfig.channelId}>. Use **/welcome dashboard** to customize channel, message, ping, or image.` });
             }
             
             if (!message || message.trim().length === 0) {
@@ -108,7 +117,7 @@ export default {
                         { name: 'Ping User', value: ping ? 'Yes' : 'No' },
                         { name: 'Status', value: 'Enabled' }
                     )
-                    .setFooter({ text: 'Tip: Use /greet dashboard to customize welcome settings' });
+                    .setFooter({ text: 'Tip: Use /welcome dashboard to customize welcome settings' });
 
                 if (image) {
                     embed.setImage(image);

@@ -1,6 +1,10 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import {
+    joinVoiceChannel,
+    playQuery,
+    buildQueueReply,
+    buildNowPlayingReply,
     skipTrack,
     stopPlayback,
     pausePlayback,
@@ -25,6 +29,28 @@ export default {
     data: new SlashCommandBuilder()
         .setName('music')
         .setDescription('Manage playback, queue, and voice session settings')
+        .addSubcommand((sub) =>
+            sub
+                .setName('play')
+                .setDescription('Play a song or add it to the queue')
+                .addStringOption((opt) =>
+                    opt.setName('query').setDescription('Song name or URL').setRequired(true),
+                ),
+        )
+        .addSubcommand((sub) =>
+            sub
+                .setName('queue')
+                .setDescription('Show the current music queue')
+                .addIntegerOption((opt) =>
+                    opt.setName('page').setDescription('Page number').setMinValue(1),
+                ),
+        )
+        .addSubcommand((sub) =>
+            sub.setName('nowplaying').setDescription('Show the currently playing track'),
+        )
+        .addSubcommand((sub) =>
+            sub.setName('join').setDescription('Join your voice channel without starting playback'),
+        )
         .addSubcommand((sub) =>
             sub.setName('pause').setDescription('Pause playback'),
         )
@@ -122,6 +148,30 @@ export default {
         const subcommand = interaction.options.getSubcommand();
 
         switch (subcommand) {
+            case 'play': {
+                const result = await playQuery(client, interaction, interaction.options.getString('query'));
+                await replyMusicSuccess(interaction, result.embed);
+                break;
+            }
+            case 'queue': {
+                const page = (interaction.options.getInteger('page') || 1) - 1;
+                const payload = buildQueueReply(client, interaction.guild.id, page);
+                await InteractionHelper.safeEditReply(interaction, {
+                    embeds: payload.embeds,
+                    components: payload.components,
+                });
+                break;
+            }
+            case 'nowplaying': {
+                const payload = buildNowPlayingReply(client, interaction.guild.id);
+                await InteractionHelper.safeEditReply(interaction, payload);
+                break;
+            }
+            case 'join': {
+                const embed = await joinVoiceChannel(client, interaction);
+                await replyMusicSuccess(interaction, embed);
+                break;
+            }
             case 'pause': {
                 const embed = await pausePlayback(client, interaction);
                 await replyMusicSuccess(interaction, embed);

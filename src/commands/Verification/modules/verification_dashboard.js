@@ -237,7 +237,7 @@ export default {
                 throw new TitanBotError(
                     'Verification not configured',
                     ErrorTypes.CONFIGURATION,
-                    'The verification system has not been set up yet. Run `/verification setup` first.',
+                    'The verification system has not been set up yet. Run `/verification-setup setup` first.',
                 );
             }
 

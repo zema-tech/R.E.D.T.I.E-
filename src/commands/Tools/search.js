@@ -1,9 +1,9 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 
-import searchDefine from './modules/search_define.js';
-import searchGoogle from './modules/search_google.js';
-import searchUrban from './modules/search_urban.js';
+import searchDefine from './search-modules/search_define.js';
+import searchGoogle from './search-modules/search_google.js';
+import searchUrban from './search-modules/search_urban.js';
 
 export default {
     data: new SlashCommandBuilder()

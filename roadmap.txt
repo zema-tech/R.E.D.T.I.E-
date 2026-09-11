@@ -1,4 +1,4 @@
-TitanBot Roadmap / Structure Overview
+# TitanBot Roadmap / Structure Overview
 
 Goal
 - Keep this as a practical map of the codebase.
@@ -9,51 +9,48 @@ Root
 - package.json                -> scripts, dependencies, project metadata
 - README.md                   -> setup and usage docs
 - SECURITY.md                 -> security policy
+- docs/brand-guidelines.md    -> bot identity, voice, visual rules
 - scripts/                    -> utility/maintenance scripts (backup, restore, migrate)
 - logs/                       -> runtime log output
 - src/                        -> main bot application code
-- tests/                      -> unit tests (run via npm test)
 
 src/
 - app.js                      -> creates client, initializes systems, starts web server
 
-- commands/                   -> slash command categories by feature
+- commands/                   -> slash command categories by feature (51 commands, v3)
   - Core/                     -> help, ping, stats, uptime, invite
   - Community/                -> application management + dashboards
   - Logging/                  -> audit logging + event management
-    - modules/logging_dashboard.js
-    - modules/logging_setchannel.js
-  - Ticket/                   -> support ticket system + dashboard
+  - Ticket/                   -> support tickets + AI assistant (summarize/suggest/moderation)
   - ServerStats/              -> server stats channel system
-  - Economy/                  -> economy system
-  - Moderation/               -> moderation/admin commands
-  - Verification/             -> member verification flow
+  - Moderation/               -> moderation (ban/kick/timeout/warn/lock/notes, all subcommand-based)
+  - Verification/             -> member verification flow (verify + verification-setup)
   - JoinToCreate/             -> dynamic voice channel creation
   - Reaction_roles/           -> automatic role assignment
-  - Birthday/, Fun/, Giveaway/, Leveling/, Search/, Tools/, Utility/, Welcome/
+  - Birthday/, Fun/ (counting game), Giveaway/, Tools/ (incl. search), Utility/, Welcome/, Music/
 
 - config/                     -> centralized configuration modules
 - events/                     -> Discord event listeners
 - handlers/                   -> interaction routing and component handlers
-  - commandLoader.js          -> loads slash commands at startup
-  - events.js                 -> Discord event listener registration
-  - interactions.js           -> button/select/modal router
-  - ticketButtons.js, reactionRoles.js, etc.
-
 - interactions/               -> button, modal, and select menu handlers
 - services/                   -> business logic + data operations
+  - ai/                       -> Groq client, ticket assistant/moderation, per-guild AI config
+  - music/                    -> Lavalink/Riffy playback, queue, recovery
 - utils/                      -> shared helpers
   - database.js               -> facade re-exporting database modules
   - database/wrapper.js       -> DatabaseWrapper, get/set helpers
-  - database/keys.js          -> Redis-style key builders
+  - database/keys.js          -> key builders (incl. legacy economy/leveling, kept for wipedata cleanup)
   - database/tickets.js       -> ticket persistence + guild ticket stats
-  - panelStatus.js            -> shared panel message detection
-  - errorHandler.js, logger.js, embeds.js, etc.
+  - embeds.js                 -> embed factory (brand tokens, footer, timestamp)
 
 Database
 - PostgreSQL (primary) with in-memory fallback for development
 - Graceful degradation when PostgreSQL is unavailable
+- Legacy economy/leveling/XP tables retained read-only for wipedata cleanup;
+  DROP planned for a future release (announced in README).
 
 Notes
 - Modular by feature area: commands -> handlers -> services -> utils
 - bot.js is the single source of truth for embed theming/colors and core bot config
+- v3 consolidation: warn/lock/timeout/ban/kick/notes use subcommands;
+  music absorbed play/queue/nowplaying/join; ticket absorbed close/claim/priority

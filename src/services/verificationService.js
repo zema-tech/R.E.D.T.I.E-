@@ -413,7 +413,7 @@ export async function validateVerificationSetup(guild, verificationConfig) {
         throw createError(
             "Verified role not found",
             ErrorTypes.CONFIGURATION,
-            "The verified role was deleted. Please run `/verification setup` again.",
+            "The verified role was deleted. Please run `/verification-setup setup` again.",
             { roleId: verificationConfig.roleId, guildId: guild.id }
         );
     }

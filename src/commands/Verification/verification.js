@@ -11,8 +11,8 @@ import verificationDashboard from './modules/verification_dashboard.js';
 
 export default {
     data: new SlashCommandBuilder()
-        .setName("verification")
-        .setDescription("Manage the server verification system")
+        .setName("verification-setup")
+        .setDescription("Manage the server verification system (admin setup)")
         .addSubcommand(subcommand =>
             subcommand
                 .setName("setup")

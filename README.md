@@ -1,6 +1,6 @@
-# TitanBot - Ultimate Discord Bot
+# TitanBot - Professional Discord Community Bot
 
-**TitanBot** is a powerful, feature-rich Discord bot designed to enhance your server experience with comprehensive moderation tools, engaging economy systems, utility features, and much more. Built with modern Discord.js v14 and PostgreSQL for optimal performance and data persistence.
+**TitanBot** is a self-hosted Discord bot for professional community management: moderation, support tickets with AI assistance, verification, giveaways, utilities, and music. Built with Discord.js v14 and PostgreSQL. Multi-guild with fully isolated per-server data.
 
 [![Support Server](https://img.shields.io/badge/-Support%20Server-%235865F2?logo=discord&logoColor=white&style=flat-square&logoWidth=20)](https://discord.gg/8kJBYhTGW9)
 [![Discord.js](https://img.shields.io/npm/v/discord.js?style=flat-square&labelColor=%23202225&color=%23202225&logo=npm&logoColor=white&logoWidth=20)](https://www.npmjs.com/package/discord.js)
@@ -11,6 +11,9 @@
 - [Features Overview](#features-overview)
 - [Quick Setup](#quick-setup)
 - [Manual Installation Steps](#manual-installation-steps)
+- [AI Assistant (Groq)](#ai-assistant-groq)
+- [Music](#music)
+- [Command Migration (v3)](#command-migration-v3)
 - [Support Server](https://discord.gg/QnWNz2dKCE)
 - [Required Bot Intents](#bot-intents)
 - [Contributing](CONTRIBUTING.md)
@@ -18,31 +21,21 @@
 <a name="features-overview"></a>
 ## Features Overview
 
-TitanBot offers a complete suite of tools for Discord server management and community engagement:
-
 <table>
 <tr>
 <td width="50%" valign="top">
 
 ### Moderation & Administration
-- **Mass Actions** - Bulk ban/kick capabilities
-- **User Notes** - Keep detailed moderation records
-- **Case Management** - View and track all mod actions
+- **Full toolkit** - `/ban`, `/kick`, `/timeout`, `/warn`, `/lock`, `/purge`, `/dm`, `/say` (each with subcommands, e.g. `/ban add|remove|mass`)
+- **Notes & cases** - Unified `/notes` history per user
+- **Abuse protection** - Rate limiting on risky commands
 
-### Economy System
-- **Shop & Inventory** - Buy and manage items
-- **Gambling** - Risk it for rewards
-- **Pay System** - Transfer money between users
-
-### Fun & Entertainment
-- **Random Facts** - Learn something new
-- **Wanted Poster** - Create fun wanted images
-- **Text Reversal** - Reverse any text
-
-### Advanced Ticket System
-- **Claim & Priority** - Staff ticket management
-- **Ticket Limits** - Prevent spam
-- **Transcript System** - Save ticket history
+### AI Ticket System
+- **Panels & dashboards** - Setup, claim, priority, close, transcripts
+- **AI summaries** - `/ticket summarize` for staff handoff
+- **AI reply drafts** - `/ticket suggest` (review before sending)
+- **Auto-moderation** - Ticket message scans with configurable sensitivity
+- **Feedback loop** - Rate AI outputs, track accuracy with `/ticket ai-stats`
 
 ### Server Stats
 - **Member Counter** - Live member count channels
@@ -57,11 +50,6 @@ TitanBot offers a complete suite of tools for Discord server management and comm
 </td>
 <td width="50%" valign="top">
 
-### Leveling & XP System
-- **XP Tracking** - Automatic message-based XP
-- **Level Roles** - Auto-assign roles by level
-- **Custom Configuration** - Personalize leveling
-
 ### Giveaways & Events
 - **Multiple Winners** - Support multi-winner giveaways
 - **Auto Picking** - Automatic winner selection
@@ -75,21 +63,25 @@ TitanBot offers a complete suite of tools for Discord server management and comm
 ### Utility Tools
 - **Report System** - Report issues to staff
 - **Todo Lists** - Personal task management
-- **First Message** - Jump to channel's first message
+- **Calculator, Weather, Polls** - Everyday utilities
+- **Search** - Dictionary, Urban Dictionary, web
 
-### Welcome System
+### Welcome & Verification
 - **Welcome Messages** - Greet new members
 - **Auto Roles** - Assign roles on join
-- **Custom Embeds** - Personalized messages
-  
+- **Verification Flow** - Button + auto-verify
+
 ### Music
-- **24/7 Mode** - Play music 24/7
-- **Interative Button System** - Manage music through buttons
-- **Supports EVERY platform** - Supports spotify, deezer, youtube, apple music
-  
+- **Full controls** - `/music play|queue|nowplaying|join|skip|previous|autoplay|loop|shuffle|seek|volume|247`
+- **24/7 Mode** - Stay connected when idle
+- **Autoplay** - Related tracks when the queue ends
+- **Error recovery** - Broken tracks are skipped automatically
+
 </td>
 </tr>
 </table>
+
+> **Removed in v3:** Economy, Leveling/XP and Shop were removed to focus the bot on moderation, tickets, utility and music. Legacy data is cleaned automatically via `/wipedata`; leftover tables will be dropped in a future release.
 
 <a name="quick-setup"></a>
 ## Quick Setup (Recommended for non-coders)
@@ -100,12 +92,10 @@ For a detailed step-by-step setup guide, watch our comprehensive video tutorial:
 
 ## Docker Deployment (Recommended)
 
-TitanBot is fully containerized for easy deployment.
-
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/codebymitch/TitanBot.git
-   cd TitanBot
+   git clone https://github.com/zema-tech/R.E.D.T.I.E-.git
+   cd R.E.D.T.I.E-
    ```
 
 2. **Configure environment variables:**
@@ -127,12 +117,27 @@ TitanBot is fully containerized for easy deployment.
 
 This starts the bot and PostgreSQL. The compose file sets `POSTGRES_SSL=false` and `AUTO_MIGRATE=true` for the bundled database. Music uses public Lavalink v4 nodes from `lavalink/nodes.json` by default.
 
+<a name="ai-assistant-groq"></a>
+### AI Assistant (Groq)
+
+Ticket AI features (summaries, reply drafts, auto-moderation) need a free Groq API key from [console.groq.com](https://console.groq.com):
+
+```env
+GROQ_API_KEY=gsk_...
+GROQ_MODEL=llama-3.1-8b-instant
+AI_TICKET_ASSISTANT=true
+AI_TICKET_MODERATION=true
+AI_SENSITIVITY=balanced
+```
+
+Without a key every AI feature reports "not configured" and the rest of the bot works normally. Per-server overrides: `/ticket ai-config`. Tune sensitivity from staff feedback: `/ticket ai-stats`.
+
 ### Music
 
-Music uses [Lavalink v4](https://github.com/lavalink-devs/Lavalink) via [Riffy](https://github.com/riffy-rb/riffy), similar to [Musicify](https://github.com/codebymitch/Musicify).
+Music uses [Lavalink v4](https://github.com/lavalink-devs/Lavalink) via [Riffy](https://github.com/riffy-rb/riffy).
 
 1. By default, the bot loads multiple public v4 SSL nodes from [`lavalink/nodes.json`](lavalink/nodes.json) (sourced from [lavalink.darrennathanael.com](https://lavalink.darrennathanael.com/SSL/Lavalink-SSL/)). Edit that file to add or remove nodes.
-2. To self-host Lavalink instead, run `docker compose --profile local-lavalink up -d` and set single-node env vars in `.env`:
+2. To self-host Lavalink instead (recommended for reliability), run `docker compose --profile local-lavalink up -d` and set single-node env vars in `.env`:
    ```env
    LAVALINK_HOST=lavalink
    LAVALINK_PORT=2333
@@ -141,14 +146,14 @@ Music uses [Lavalink v4](https://github.com/lavalink-devs/Lavalink) via [Riffy](
    ```
    Remove or rename `lavalink/nodes.json` so the bot falls back to those env vars.
 3. Override nodes inline with `LAVALINK_NODES` (JSON array) or point at another file with `LAVALINK_NODES_FILE`.
-4. Use `/play <song>` from a voice channel, or `/join` to connect without playing. Prefix shortcuts: `join`, `np`, `leave`, `pause`, `resume`, `skip`, `stop`, `volume <0-100>`, or `music <subcommand>`. Use `/nowplaying` and `/queue` for status; `/music` for loop, shuffle, seek, and other controls.
+4. Use `/music play <song>` from a voice channel. Full control list: `/music queue|nowplaying|join|skip|previous|autoplay|pause|resume|stop|shuffle|loop|volume|seek|remove|move|clear|leave|247`.
 
 ### Using GitHub Container Registry
 
 The bot is automatically published to GitHub Container Registry on every push to main.
 
 ```bash
-docker pull ghcr.io/codebymitch/titanbot:main
+docker pull ghcr.io/zema-tech/R.E.D.T.I.E-:main
 ```
 
 <a name="manual-installation-steps"></a>
@@ -158,11 +163,12 @@ docker pull ghcr.io/codebymitch/titanbot:main
 - Node.js 20.10.0 or higher
 - PostgreSQL server (recommended) or memory storage fallback
 - Discord bot application with proper intents
+- (Optional) Groq API key for ticket AI features
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/codebymitch/TitanBot.git
-   cd TitanBot
+   git clone https://github.com/zema-tech/R.E.D.T.I.E-.git
+   cd R.E.D.T.I.E-
    ```
 
 2. **Install Dependencies**
@@ -188,6 +194,9 @@ docker pull ghcr.io/codebymitch/titanbot:main
    POSTGRES_DB=titanbot
    POSTGRES_USER=postgres
    POSTGRES_PASSWORD=yourpassword
+
+   # AI Assistant (optional — ticket summarize/suggest/moderation)
+   GROQ_API_KEY=
    ```
 
    Production note:
@@ -199,7 +208,6 @@ docker pull ghcr.io/codebymitch/titanbot:main
    Environment options reference:
    - `NODE_ENV`: `development`, `production`, `test` (any non-`production` value is treated as non-production)
    - `LOG_LEVEL`: `error`, `warn`, `info`, `http`, `verbose`, `debug`, `silly`
-   - Accepted aliases for `LOG_LEVEL` in this bot: `warns`, `warning`, `warnings` → `warn`
 
    Recommended production `.env` (easy mode + default mode):
    ```env
@@ -218,7 +226,7 @@ Slash commands are registered **globally** on startup (via `CLIENT_ID`), so the 
 
 Notes:
 - Global slash commands may take up to about an hour to propagate on first deploy
-- Each server has **isolated** data: config, economy, tickets, leveling, dashboards, warnings, etc. (all keys are scoped as `guild:{guildId}:...`)
+- Each server has **isolated** data: config, tickets, dashboards, warnings, etc. (all keys are scoped as `guild:{guildId}:...`)
 - In the [Discord Developer Portal](https://discord.com/developers/applications), ensure your bot is not restricted to a single guild if you plan to invite it elsewhere
 - Generate an OAuth2 invite URL from the [Discord Developer Portal](https://discord.com/developers/applications) (OAuth2 → URL Generator, scopes: `bot` and `applications.commands`)
 
@@ -242,10 +250,31 @@ Notes:
    ```
 
 > **Note on database migrations:** Schema tables and legacy key migrations run
-> **automatically on startup**, so` managed hosts like **Railway** need no manual
+> **automatically on startup**, so managed hosts like **Railway** need no manual
 > migration step — just deploy/restart. To disable auto-migration set
 > `AUTO_MIGRATE=false`. You can still run a manual key migration locally with
 > `node scripts/migrate-keys.js --dry-run` (preview) or `node scripts/migrate-keys.js`.
+<a name="command-migration-v3"></a>
+
+## Command Migration (v3)
+
+v3 consolidates duplicate commands into subcommands. Old names stop working once Discord refreshes global commands (up to ~1h after deploy):
+
+| Before | After |
+|---|---|
+| `/warnings`, `/usernotes view`, `/cases` | `/warn list`, `/notes list`, `/notes cases` |
+| `/unban` | `/ban remove` |
+| `/massban` | `/ban mass` |
+| `/kick` + `/masskick` | `/kick single`, `/kick mass` |
+| `/untimeout` | `/timeout remove` |
+| `/unlock` | `/lock unlock` |
+| `/play`, `/join`, `/queue`, `/nowplaying` | `/music play|join|queue|nowplaying` |
+| `/close`, `/claim`, `/priority` | `/ticket close|claim|priority` |
+| `/verification` (admin) | `/verification-setup` |
+| `/greet` | `/welcome` |
+| `/unixtime` | `/time` (includes unix timestamp) |
+| `/flip`, `/roll`, `/fight`, `/hexcolor`, `/baseconvert`, `/randomuser`, `/firstmsg` | Removed |
+
 <a name="bot-intents"></a>
 
 ## Required Bot Intents
@@ -270,7 +299,6 @@ TitanBot requires the following Discord intents:
 - **Manage Channels**
 - **Manage Roles**
 - **Kick Members**
-- **Manage Messages**
 - **Ban Members**
 - **Moderate Members**
 - **Connect**
@@ -283,4 +311,4 @@ TitanBot is released under the MIT License. See [LICENSE](LICENSE) for details.
 
 Thank you for choosing TitanBot for your Discord server! We're constantly working to improve and add new features based on community feedback.
 
-*Last updated: May 2026*
+*Last updated: September 2026*
