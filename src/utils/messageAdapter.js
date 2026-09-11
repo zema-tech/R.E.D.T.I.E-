@@ -109,7 +109,10 @@ export function createMockInteraction(message, commandData, args) {
         const mentionMatch = channelId.match(/<#(\d+)>/);
         const id = mentionMatch ? mentionMatch[1] : channelId;
 
-        return message.guild.channels.fetch(id).catch(() => null);
+        // Must stay synchronous: all prefix call sites use the return value
+        // directly (e.g. channel.id). fetch() returns a Promise which is
+        // always truthy and breaks those checks, so resolve from cache.
+        return message.guild.channels.cache.get(id) ?? null;
       },
       getRole: (name) => {
         const roleId = options.getString(name);
@@ -118,7 +121,8 @@ export function createMockInteraction(message, commandData, args) {
         const mentionMatch = roleId.match(/<@&(\d+)>/);
         const id = mentionMatch ? mentionMatch[1] : roleId;
 
-        return message.guild.roles.fetch(id).catch(() => null);
+        // Same as getChannel: synchronous cache lookup, never a Promise.
+        return message.guild.roles.cache.get(id) ?? null;
       },
       getInteger: (name) => options.getInteger(name),
       getBoolean: (name) => options.getBoolean(name),

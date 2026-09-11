@@ -30,17 +30,19 @@ export async function checkRateLimit(key, maxAttempts = 5, windowMs = 60000) {
   }
 }
 
-export function getRateLimitStatus(key, windowMs = 60000) {
+export function getRateLimitStatus(key, windowMs = 60000, maxAttempts = 5) {
   const entry = rateLimitStore.get(key);
   if (!entry) {
-    return { limited: false, remaining: windowMs };
+    return { limited: false, remaining: windowMs, attempts: 0 };
   }
 
   const elapsed = Date.now() - entry.windowStart;
   const remaining = Math.max(0, windowMs - elapsed);
 
+  // Limited only when the window is still active AND the attempt budget
+  // is exhausted — not merely because an entry exists.
   return {
-    limited: remaining > 0,
+    limited: remaining > 0 && entry.count >= maxAttempts,
     remaining,
     attempts: entry.count
   };

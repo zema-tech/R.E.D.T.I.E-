@@ -170,19 +170,28 @@ class EconomyService {
     receiverData.wallet = receiverNext;
 
     try {
-      
-      await setEconomyData(client, guildId, senderId, senderData);
-      
+      // setEconomyData returns false (no throw) on persistence failure —
+      // treat it as an error so silent writes never desync balances.
+      const senderSaved = await setEconomyData(client, guildId, senderId, senderData);
+      if (!senderSaved) {
+        throw new Error('Failed to persist sender balance');
+      }
+
       try {
-        
-        await setEconomyData(client, guildId, receiverId, receiverData);
+        const receiverSaved = await setEconomyData(client, guildId, receiverId, receiverData);
+        if (!receiverSaved) {
+          throw new Error('Failed to persist receiver balance');
+        }
       } catch (receiverError) {
         
         logger.error(`[ECONOMY_CRITICAL] Failed to credit receiver ${receiverId}. Attempting rollback for sender ${senderId}...`, receiverError);
         
         senderData.wallet = walletBefore;
         try {
-          await setEconomyData(client, guildId, senderId, senderData);
+          const rollbackSaved = await setEconomyData(client, guildId, senderId, senderData);
+          if (!rollbackSaved) {
+            throw new Error('Rollback write returned false');
+          }
           logger.info(`[ECONOMY_ROLLBACK] Successfully rolled back sender ${senderId} after receiver credit failure.`);
         } catch (rollbackError) {
           logger.error(`[ECONOMY_FATAL] ROLLBACK FAILED for sender ${senderId}! Data is now inconsistent.`, rollbackError);

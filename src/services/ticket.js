@@ -827,6 +827,9 @@ export async function deleteTicket(channel, deleter) {
             channelName: channel.name,
             ticketNumber: ticketData.id
           });
+          // Remove persisted ticket data only after the channel is gone —
+          // otherwise open-ticket limits keep counting deleted tickets.
+          await deleteTicketData(channel.guild.id, channel.id);
         } catch (deleteError) {
           logger.error('❌ Failed to delete ticket channel:', {
             channelId: channel.id,

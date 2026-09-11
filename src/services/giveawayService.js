@@ -257,8 +257,9 @@ export function isUserRateLimited(userId, giveawayId) {
     const status = getRateLimitStatus(
         getGiveawayInteractionKey(userId, giveawayId),
         GIVEAWAY_INTERACTION_COOLDOWN,
+        1,
     );
-    return status.attempts >= 1 && status.remaining > 0;
+    return status.limited;
 }
 
 export async function recordUserInteraction(userId, giveawayId) {

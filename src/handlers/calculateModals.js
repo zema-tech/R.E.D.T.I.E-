@@ -10,8 +10,12 @@ function evaluate(expression) {
 async function calculateModalHandler(interaction, client, args) {
     try {
         const operation = args[0];
-        const operandInput = interaction.fields.first();
-        const contextKey = operandInput?.customId?.split(':')[1];
+        // ModalSubmitFields has no .first() — locate the operand input by
+        // its customId prefix (built as `operand:<userId>_<operation>`).
+        const operandField = [...interaction.fields.fields.values()].find(
+            (field) => typeof field?.customId === 'string' && field.customId.startsWith('operand:'),
+        );
+        const contextKey = operandField?.customId?.split(':')[1];
         
         if (!contextKey) {
             return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Failed to retrieve calculation context.' });
@@ -19,14 +23,19 @@ async function calculateModalHandler(interaction, client, args) {
 
         const { calculationContexts } = await import('../commands/Tools/calculate.js');
         const context = calculationContexts.get(contextKey);
-        
+
         if (!context) {
             return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'This calculation has expired. Please start a new calculation.' });
         }
 
+        // Only the user who opened the calculator may submit the modal.
+        if (context.userId && context.userId !== interaction.user.id) {
+            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'This calculator belongs to another user.' });
+        }
+
         await interaction.deferReply({ ephemeral: false });
 
-        const operand = interaction.fields.getTextInputValue(operandInput.customId);
+        const operand = operandField?.value;
         
         if (!operand || isNaN(operand)) {
             return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please provide a valid number.' });

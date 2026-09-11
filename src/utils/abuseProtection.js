@@ -169,7 +169,7 @@ export async function enforceAbuseProtection(interaction, command, commandName) 
     };
   }
 
-  const status = getRateLimitStatus(key, policy.windowMs);
+  const status = getRateLimitStatus(key, policy.windowMs, policy.maxAttempts);
   const remainingMs = Math.max(0, status?.remaining || 0);
 
   logger.info('Risky command blocked by cooldown policy', {
