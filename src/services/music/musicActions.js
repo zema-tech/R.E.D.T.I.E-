@@ -54,12 +54,24 @@ export async function ensurePlayer(client, interaction) {
 
     const guildId = interaction.guild.id;
     const guildData = getGuildMusicData(guildId);
+    const userChannelId = interaction.member.voice.channel.id;
     let player = getPlayer(client, guildId);
+
+    // Follow the user: if the bot sits in another channel, move instead of
+    // queueing into a channel the requester cannot hear.
+    if (player && player.voiceChannel !== userChannelId) {
+        try {
+            player.destroy();
+        } catch {
+            // player may already be gone
+        }
+        player = null;
+    }
 
     if (!player) {
         player = client.riffy.createConnection({
             guildId,
-            voiceChannel: interaction.member.voice.channel.id,
+            voiceChannel: userChannelId,
             textChannel: interaction.channel.id,
             deaf: true,
         });
@@ -333,6 +345,48 @@ export async function toggleLoop(client, interaction) {
     return setLoopMode(client, interaction, next);
 }
 
+export async function setAutoplay(client, interaction, enabled) {
+    const player = getPlayer(client, interaction.guild.id);
+    if (!player) {
+        throw new TitanBotError('No player', ErrorTypes.USER_INPUT, 'No active music player.');
+    }
+    assertCanControl(interaction.member, player);
+
+    const guildData = getGuildMusicData(interaction.guild.id);
+    guildData.autoplay = enabled;
+    await refreshPlayerMessage(client, interaction.guild.id);
+    return successEmbed(
+        'Autoplay Updated',
+        enabled
+            ? 'Autoplay enabled. Related tracks will keep playing when the queue ends.'
+            : 'Autoplay disabled. Playback will stop when the queue ends.',
+    );
+}
+
+export async function playPrevious(client, interaction) {
+    const player = getPlayer(client, interaction.guild.id);
+    if (!player) {
+        throw new TitanBotError('No player', ErrorTypes.USER_INPUT, 'No active music player.');
+    }
+    assertCanControl(interaction.member, player);
+
+    const guildData = getGuildMusicData(interaction.guild.id);
+    const previous = guildData.previousTracks.pop();
+    if (!previous) {
+        throw new TitanBotError('No history', ErrorTypes.USER_INPUT, 'No previous track in this session.');
+    }
+
+    if (player.current) {
+        player.queue.splice(0, 0, player.current);
+    }
+    player.queue.splice(0, 0, previous);
+    if (player.loop === 'track') {
+        player.setLoop('none');
+    }
+    player.stop();
+    return successEmbed('Previous Track', `Replaying **${previous.info?.title || 'track'}**.`);
+}
+
 export async function setVolume(client, interaction, volume) {
     const player = getPlayer(client, interaction.guild.id);
     if (!player) {
@@ -481,6 +535,7 @@ export async function destroyPlayerSession(client, guildId, player, guildData, {
     guildData.stopConfirmPending = null;
     guildData.autoPaused = false;
     guildData.queuePages?.clear();
+    guildData.queuePageSeenAt?.clear();
 
     if (guildData.playerMessageId && guildData.playerChannelId) {
         try {

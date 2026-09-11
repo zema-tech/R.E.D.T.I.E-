@@ -232,10 +232,34 @@ export function setupPlayerHandler(client) {
                 channel.send(`Failed to play **${track?.info?.title || 'track'}**. Skipping...`).catch(() => null);
             }
         }
+        // Advance the queue instead of stalling on the broken track.
+        try {
+            if (player.loop === 'track') {
+                player.setLoop('none');
+            }
+            player.stop();
+        } catch (error) {
+            logger.error('Failed to skip errored track:', error.message);
+        }
     });
 
     client.riffy.on('trackStuck', async (player, track, payload) => {
         logger.warn(`Track stuck in ${player.guildId} for "${track?.info?.title}" (${payload?.thresholdMs}ms)`);
+        const guildData = getGuildMusicData(player.guildId);
+        if (guildData.playerChannelId) {
+            const channel = client.channels.cache.get(guildData.playerChannelId);
+            if (channel) {
+                channel.send(`**${track?.info?.title || 'Track'}** got stuck. Skipping...`).catch(() => null);
+            }
+        }
+        try {
+            if (player.loop === 'track') {
+                player.setLoop('none');
+            }
+            player.stop();
+        } catch (error) {
+            logger.error('Failed to skip stuck track:', error.message);
+        }
     });
 }
 

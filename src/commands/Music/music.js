@@ -7,6 +7,8 @@ import {
     resumePlayback,
     shuffleQueue,
     setLoopMode,
+    setAutoplay,
+    playPrevious,
     setVolume,
     seekTrack,
     removeFromQueue,
@@ -31,6 +33,17 @@ export default {
         )
         .addSubcommand((sub) =>
             sub.setName('skip').setDescription('Skip the current track'),
+        )
+        .addSubcommand((sub) =>
+            sub.setName('previous').setDescription('Replay the previous track'),
+        )
+        .addSubcommand((sub) =>
+            sub
+                .setName('autoplay')
+                .setDescription('Auto-play related tracks when the queue ends')
+                .addBooleanOption((opt) =>
+                    opt.setName('enabled').setDescription('Enable or disable autoplay').setRequired(true),
+                ),
         )
         .addSubcommand((sub) =>
             sub.setName('stop').setDescription('Stop playback and clear the queue'),
@@ -121,6 +134,16 @@ export default {
             }
             case 'skip': {
                 const embed = await skipTrack(client, interaction);
+                await replyMusicSuccess(interaction, embed);
+                break;
+            }
+            case 'previous': {
+                const embed = await playPrevious(client, interaction);
+                await replyMusicSuccess(interaction, embed);
+                break;
+            }
+            case 'autoplay': {
+                const embed = await setAutoplay(client, interaction, interaction.options.getBoolean('enabled'));
                 await replyMusicSuccess(interaction, embed);
                 break;
             }

@@ -1,7 +1,7 @@
 import { MessageFlags } from 'discord.js';
 import { logger } from '../utils/logger.js';
 import { handleInteractionError } from '../utils/errorHandler.js';
-import { getGuildMusicData } from '../services/music/playerStore.js';
+import { getGuildMusicData, setQueuePage } from '../services/music/playerStore.js';
 import {
     getPlayer,
     buildQueueReply,
@@ -27,7 +27,7 @@ async function handleMusicButton(interaction, client) {
         if (!canControlMusic(interaction.member, player)) {
             return replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: VOICE_CHANNEL_DENIAL });
         }
-        guildData.queuePages.set(interaction.user.id, 0);
+        setQueuePage(guildData, interaction.user.id, 0);
         const payload = buildQueueReply(client, interaction.guild.id, 0);
         return interaction.reply({
             embeds: payload.embeds,
@@ -73,7 +73,7 @@ async function handleMusicButton(interaction, client) {
                 break;
         }
 
-        guildData.queuePages.set(interaction.user.id, page);
+        setQueuePage(guildData, interaction.user.id, page);
         const updated = buildQueueReply(client, interaction.guild.id, page);
         return interaction.editReply({
             embeds: updated.embeds,

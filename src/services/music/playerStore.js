@@ -11,11 +11,28 @@ export class GuildMusicData {
         this.previousTracks = [];
         this.twentyFourSeven = false;
         this.queuePages = new Map();
+        this.queuePageSeenAt = new Map();
         this.updateInterval = null;
         this.idleTimeout = null;
         this.autoPaused = false;
         this.stopConfirmPending = null;
     }
+}
+
+const QUEUE_PAGE_TTL_MS = 15 * 60 * 1000;
+
+// Queue pagination entries are per-user view state: drop stale ones so the
+// map cannot grow for the lifetime of the process.
+export function setQueuePage(guildData, userId, page) {
+    const now = Date.now();
+    for (const [key, seenAt] of guildData.queuePageSeenAt) {
+        if (now - seenAt > QUEUE_PAGE_TTL_MS) {
+            guildData.queuePageSeenAt.delete(key);
+            guildData.queuePages.delete(key);
+        }
+    }
+    guildData.queuePages.set(userId, page);
+    guildData.queuePageSeenAt.set(userId, now);
 }
 
 export function clearUpdateInterval(guildData) {
